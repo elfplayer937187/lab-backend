@@ -1,0 +1,54 @@
+{
+  // ---------- 缩进:统一 4 空格 ----------
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  // 关掉自动探测,否则打开 2 空格的文件会被覆盖回 2
+  "editor.detectIndentation": false,
+
+  // ---------- 行宽与空白 ----------
+  "editor.rulers": [100],
+  "editor.trimAutoWhitespace": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // ---------- 保存时格式化 ----------
+  "editor.formatOnSave": true,
+  // 默认走 Prettier(JSON / Markdown / YAML / 前端文件),Python 单独覆盖为 Ruff
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // 没有 .prettierrc 的文件不格式化,避免用默认值乱改
+  "prettier.requireConfig": true,
+
+  // ---------- Python:Ruff 负责格式化 + lint ----------
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+  "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+
+  // ---------- Markdown:保留行尾双空格(Markdown 里表示换行) ----------
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  },
+
+  // ---------- 杂项 ----------
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true
+  },
+  "search.exclude": {
+    ".venv": true,
+    "**/__pycache__": true
+  },
+  "files.encoding": "utf8"
+}

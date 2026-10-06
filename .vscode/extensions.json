@@ -1,0 +1,12 @@
+{
+  // 打开本项目时 VSCode 会提示安装这些扩展
+  "recommendations": [
+    // Python 语言支持与类型检查
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    // Python 格式化 + lint(settings.json 里 [python] 的 defaultFormatter)
+    "charliermarsh.ruff",
+    // JSON / Markdown / YAML 格式化(settings.json 的全局 defaultFormatter)
+    "esbenp.prettier-vscode"
+  ]
+}

@@ -1,0 +1,20 @@
+# 依赖与虚拟环境
+.venv/
+node_modules/
+
+# Python 产物
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# 缓存
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# 版本控制与日志
+.git/
+.claude/logs/
+*.log
