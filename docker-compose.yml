@@ -1,0 +1,44 @@
+# 本地开发用 MySQL 8.0
+# 启动:docker compose up -d
+# 停止:docker compose down          (保留数据卷)
+# 清库:docker compose down -v       (连数据卷一起删,慎用)
+#
+# 连接串与 .env 的 DATABASE_URL 对应:
+#   mysql+pymysql://root:123456@127.0.0.1:3308/my_lab
+
+services:
+    mysql:
+        image: mysql:8.0
+        container_name: lab-mysql
+        restart: no
+        command:
+            # 全库默认 utf8mb4,避免中文/emoji 写入报 Incorrect string value
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+            # MySQL 8 默认 caching_sha2_password。当前 venv 没装 cryptography,
+            # PyMySQL 走该认证方式会在连接时报 RuntimeError。见 .claude/logs 记录。
+            - --default-authentication-plugin=mysql_native_password
+        environment:
+            MYSQL_ROOT_PASSWORD: '123456'
+            # 容器首次初始化时自动建库,已存在则跳过
+            MYSQL_DATABASE: my_lab
+            TZ: Asia/Shanghai
+        ports:
+            # 宿主机 3308 -> 容器 3306(本机若已装 MySQL 占用 3306,用 3308 避开)
+            - '3308:3306'
+        volumes:
+            # 命名卷:数据落在 docker 管理的卷里,`down` 不丢,`down -v` 才清空
+            - mysql_data:/var/lib/mysql
+            # 首次初始化时执行的 .sql/.sh,只在数据卷为空时跑一次
+            - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-p123456']
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            # 首次启动要初始化数据目录,给足时间再开始判活
+            start_period: 30s
+
+volumes:
+    mysql_data:
+        name: lab-mysql-data
