@@ -1,12 +1,23 @@
 from fastapi import Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.common.base_response import error_response
+from app.common.business_error import BusinessError
 from app.utils.jwt import get_token_from_request, verify_access_token
 
-WhiteList = [
-    '',
-    '',
-]
+# 免鉴权路径。request.url.path 永远以 / 开头,所以这里必须写完整的绝对路径,
+# 空字符串或漏掉开头斜杠的写法永远匹配不上。
+WHITE_LIST = frozenset(
+    {
+        '/api/auth/login',  # 登录本身不能要求 token,否则没有 token 就换不到 token
+        '/api/auth/register',
+        '/docs',
+        '/docs/oauth2-redirect',
+        '/openapi.json',  # /docs 页面靠它拿接口定义,不放行则文档列表是空的
+        '/redoc',
+    }
+)
 
 
 class JWTMiddleWare(BaseHTTPMiddleware):
@@ -25,10 +36,23 @@ class JWTMiddleWare(BaseHTTPMiddleware):
         super().__init__(app)
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in WhiteList:
+        print(request.url.path)
+        if request.url.path in WHITE_LIST:
             return await call_next(request)
-        token = get_token_from_request(request)
-        payload = verify_access_token(token)
+        try:
+            token = get_token_from_request(request)
+        except BusinessError as e:
+            return JSONResponse(
+                status_code=e.http_status,
+                content=error_response(e.code, e.message, e.data).model_dump(),
+            )
+        try:
+            payload = verify_access_token(token)
+        except BusinessError as e:
+            return JSONResponse(
+                status_code=e.http_status,
+                content=error_response(e.code, e.message, e.data).model_dump(),
+            )
 
         request.state.username = payload['username']
         request.state.role = payload['role']

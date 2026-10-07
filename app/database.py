@@ -16,9 +16,15 @@ SessionLocal = sessionmaker(bind=engine, class_=Session, expire_on_commit=False)
 
 # 模型基类
 class Base(DeclarativeBase):
-    id: Mapped[int] = mapped_column(
-        primary_key=True, unique=True, autoincrement=True, comment='主键'
-    )
+    """只放各表共用的时间戳列。
+
+    主键 id 刻意不定义在这里:SQLAlchemy 建表时会把继承来的列排在子类自己声明的
+    列**之后**,id 放在基类上就会变成表的最后一列。各模型自己声明 id,才能保证
+    它是第一列(写法见 User 模型)。
+
+    代价是基类不再提供主键 —— 新增模型时必须自己声明一个主键列。
+    """
+
     # 注意传的是 datetime.now 本身(可调用对象),不是 datetime.now()。
     # 加括号会在模块导入时求值成固定值,导致所有行的该字段都是同一个时间戳。
     created_at: Mapped[datetime] = mapped_column(

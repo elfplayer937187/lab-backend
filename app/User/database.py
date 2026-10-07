@@ -10,6 +10,11 @@ class User(Base):
     __tablename__ = 'user'
     __table_args__ = {'comment': '用户表'}
 
+    # id 必须在这里声明,不能挪回 Base —— SQLAlchemy 会把继承来的列排到子类自己
+    # 声明的列之后,那样建出来的表第一列就不是主键了。其他模型同理。
+    id: Mapped[int] = mapped_column(
+        primary_key=True, unique=True, autoincrement=True, comment='主键'
+    )
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, comment='用户名')
     # bcrypt 哈希固定 60 字符,留出余量以便将来换 Argon2 等更长的算法
     password: Mapped[str] = deferred(mapped_column(String(100), nullable=False, comment='密码'))

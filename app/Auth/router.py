@@ -2,15 +2,16 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.schemas import LoginRequest
+from app.auth.schemas import LoginRequest, RegisterRequest
 from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
 from app.User.database import User
-from app.utils.bcrypt import verify_password
+from app.utils.bcrypt import hash_password, verify_password
+from app.utils.jwt import create_access_token
 
-router = APIRouter(prefix='/auth', tags=['auth'])
+router = APIRouter(prefix='/api/auth', tags=['auth'])
 
 
 @router.post('/login', description='用户登录', summary='用户登录')
@@ -27,8 +28,10 @@ async def login(LoginInfo: LoginRequest, db: Session = Depends(get_db)):
 
     if user.status != 1:
         raise BusinessError(code=Code.USER_DISABLED, message='用户被禁用', http_status=403)
+    token = create_access_token(user.id, user.username, user.role)
     return success_response(
         data={
+            'userId': user.id,
             'username': user.username,
             'name': user.name,
             'role': user.role,
@@ -36,5 +39,27 @@ async def login(LoginInfo: LoginRequest, db: Session = Depends(get_db)):
             'phone': user.phone,
             'avatar': user.avatar,
             'status': user.status,
+            'token': token,
         }
     )
+
+
+@router.post('/register', description='用户注册', summary='用户注册')
+async def register(RegisterInfo: RegisterRequest, db: Session = Depends(get_db)):
+    stmt = select(User).where(User.username == RegisterInfo.username)
+    user = db.execute(stmt).scalar_one_or_none()
+    if user:
+        raise BusinessError(code=Code.ACCOUNT_SAME, message='用户名已存在', http_status=409)
+    if RegisterInfo.confirm_password != RegisterInfo.password:
+        raise BusinessError(code=Code.PARAM_ERROR, message='密码不一致')
+    user = User(
+        username=RegisterInfo.username,
+        password=hash_password(RegisterInfo.password),
+        name=RegisterInfo.name or '未知',
+        email=RegisterInfo.email or '',
+        phone=RegisterInfo.phone or '',
+        role='student',
+        status=1,
+    )
+    db.add(user)
+    return success_response(message='注册成功')

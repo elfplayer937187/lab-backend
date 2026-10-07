@@ -189,6 +189,7 @@ def build_llm() -> ChatOpenAI:
 - `.env` 已在 `.gitignore` 中,**永不入库**。
 - 需要提交的是 `.env.example`,只写键名和占位值,不含真实密钥。
 - 新增环境变量后,记得同步更新 `.env.example`。
+- 不用改JWT_SECRET_KEY 就这么长就行
 
 ---
 

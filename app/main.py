@@ -10,7 +10,7 @@ from app.filters.filters import (
     RequestValidationErrorHandler,
     UnhandledErrorHandler,
 )
-from app.middlewares.jwt_midware import BaseHTTPMiddleware
+from app.middlewares.jwt_midware import JWTMiddleWare
 
 # 创建数据库表。
 # 只建「不存在」的表,不会修改已存在的表结构 —— 改字段要靠 alembic 迁移,
@@ -24,7 +24,7 @@ app.add_exception_handler(BusinessError, BusinessErrorHandler)  # type: ignore[a
 app.add_exception_handler(RequestValidationError, RequestValidationErrorHandler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, UnhandledErrorHandler)
 
-app.add_middleware(BaseHTTPMiddleware)
+app.add_middleware(JWTMiddleWare)
 
 
 @app.get('/')
