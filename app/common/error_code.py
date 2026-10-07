@@ -13,3 +13,5 @@ class Code:
     # 用户/账户
     ACCOUNT_SAME = 230  # 账户已存在
     USER_NOT_EXIST = 231  # 用户不存在
+    USER_DISABLED = 232  # 用户被禁用
+    UNKNOWN_ERROR = 240  # 未知错误

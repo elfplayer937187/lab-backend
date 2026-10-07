@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     # 必需项,无默认值 —— 从 .env 读取。缺失时启动即报错,不要在这里写死连接串
     DATABASE_URL: str
 
+    # JWT 配置
+    JWT_SECRET_KEY: str
+    JWT_EXPIRATION_HOURS: int = 24
+    JWT_ALGORITHM: str = "HS256"
     # 是否打印 SQLAlchemy 生成的 SQL,开发时开启便于调试
     DB_ECHO: bool = True
 
