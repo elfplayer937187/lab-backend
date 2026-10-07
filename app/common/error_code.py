@@ -1,3 +1,4 @@
+# 业务上的错误码
 class Code:
     SUCCESS = 200  # 成功
     PARAM_ERROR = 400  # 参数错误
@@ -15,3 +16,28 @@ class Code:
     USER_NOT_EXIST = 231  # 用户不存在
     USER_DISABLED = 232  # 用户被禁用
     UNKNOWN_ERROR = 240  # 未知错误
+
+
+# 业务码 → HTTP 状态码的兜底映射。
+#
+# 只在抛 BusinessError 时没显式传 http_status 才用得上。同一个业务码在不同接口
+# 的 HTTP 语义可能不同 —— 比如 USER_NOT_EXIST:登录失败应该回 401,查用户详情
+# 应该回 404。这种时候在抛的地方显式传 http_status 覆盖本表。
+#
+# 表里没有的业务码一律按 400 处理(见 BusinessError.__init__)。
+HTTP_STATUS: dict[int, int] = {
+    Code.SUCCESS: 200,
+    Code.PARAM_ERROR: 400,
+    Code.UNAUTHORIZED: 401,
+    Code.ACCESS_FORBIDDEN: 403,
+    Code.SYSTEM_ERROR: 500,
+    # Token
+    Code.TOKEN_INVALID: 401,
+    Code.TOKEN_ACCESS_FORBIDDEN: 403,
+    Code.ACCESS_UNAUTHORIZED: 401,
+    # 用户/账户
+    Code.ACCOUNT_SAME: 409,
+    Code.USER_NOT_EXIST: 404,
+    Code.USER_DISABLED: 403,
+    Code.UNKNOWN_ERROR: 500,
+}

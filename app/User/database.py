@@ -1,7 +1,7 @@
 from typing import Literal
 
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, deferred
+from sqlalchemy.orm import Mapped, deferred, mapped_column
 
 from app.database import Base
 

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # JWT 配置
     JWT_SECRET_KEY: str
     JWT_EXPIRATION_HOURS: int = 24
-    JWT_ALGORITHM: str = "HS256"
+    JWT_ALGORITHM: str = 'HS256'
     # 是否打印 SQLAlchemy 生成的 SQL,开发时开启便于调试
     DB_ECHO: bool = True
 

@@ -17,12 +17,16 @@ router = APIRouter(prefix='/auth', tags=['auth'])
 async def login(LoginInfo: LoginRequest, db: Session = Depends(get_db)):
     stmt = select(User).where(User.username == LoginInfo.username)
     user = db.execute(stmt).scalar_one_or_none()
-    # 用户不存在 或者 密码错误
+    # 用户不存在 或者 密码错误。
+    # 两种情况刻意合并成同一个响应:分开提示等于告诉攻击者哪些用户名真实存在(账号枚举)。
+    # message 也不能写成「用户不存在」—— 密码错时那句话是假的,前端弹出来会误导用户。
+    # http_status 显式传 401:USER_NOT_EXIST 的兜底映射是 404(用于查用户详情),
+    # 但登录失败的 HTTP 语义是「认证未通过」。
     if not user or not verify_password(LoginInfo.password, user.password):
-        raise BusinessError(code=Code.USER_NOT_EXIST, message='用户不存在')
+        raise BusinessError(code=Code.USER_NOT_EXIST, message='用户名或密码错误', http_status=401)
 
     if user.status != 1:
-        raise BusinessError(code=Code.USER_NOT_EXIST, message='用户被禁用')
+        raise BusinessError(code=Code.USER_DISABLED, message='用户被禁用', http_status=403)
     return success_response(
         data={
             'username': user.username,

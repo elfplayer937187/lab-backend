@@ -16,7 +16,9 @@ SessionLocal = sessionmaker(bind=engine, class_=Session, expire_on_commit=False)
 
 # 模型基类
 class Base(DeclarativeBase):
-    id: Mapped[int] = mapped_column(primary_key=True,unique=True, autoincrement=True, comment='主键')
+    id: Mapped[int] = mapped_column(
+        primary_key=True, unique=True, autoincrement=True, comment='主键'
+    )
     # 注意传的是 datetime.now 本身(可调用对象),不是 datetime.now()。
     # 加括号会在模块导入时求值成固定值,导致所有行的该字段都是同一个时间戳。
     created_at: Mapped[datetime] = mapped_column(
