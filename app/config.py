@@ -28,3 +28,7 @@ class Settings(BaseSettings):
 # DATABASE_URL 等无默认值的字段由 pydantic-settings 在运行时从 .env 注入,
 # 静态分析器看不到这一步,会误报「缺少参数」,故忽略 call-arg。
 settings = Settings()  # type: ignore[call-arg]
+
+
+#文件上传路径
+UPLOAD_DIR = ROOT_DIR / 'uploads'

@@ -11,7 +11,7 @@ from app.User.database import User
 from app.utils.bcrypt import hash_password, verify_password
 from app.utils.jwt import create_access_token
 
-router = APIRouter(prefix='/api/auth', tags=['auth'])
+router = APIRouter(prefix='/auth', tags=['auth'])
 
 
 @router.post('/login', description='用户登录', summary='用户登录')

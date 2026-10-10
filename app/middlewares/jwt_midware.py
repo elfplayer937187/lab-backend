@@ -16,6 +16,7 @@ WHITE_LIST = frozenset(
         '/docs/oauth2-redirect',
         '/openapi.json',  # /docs 页面靠它拿接口定义,不放行则文档列表是空的
         '/redoc',
+        '/api/upload'
     }
 )
 
