@@ -11,7 +11,9 @@ from app.filters.filters import (
     RequestValidationErrorHandler,
     UnhandledErrorHandler,
 )
+from app.config import UPLOAD_DIR
 from app.middlewares.jwt_midware import JWTMiddleWare
+from pathlib import Path
 
 # 创建数据库表。
 # 只建「不存在」的表,不会修改已存在的表结构 —— 改字段要靠 alembic 迁移,
@@ -27,8 +29,11 @@ app.add_exception_handler(Exception, UnhandledErrorHandler)
 
 app.add_middleware(JWTMiddleWare)
 
-# 挂载静态文件
+if not Path(UPLOAD_DIR).exists():
+    Path(UPLOAD_DIR).mkdir(parents=True)
+
 app.mount("/uploads", StaticFiles(directory=f"{UPLOAD_DIR}"), name="uploads")
+
 
 
 @app.get("/")

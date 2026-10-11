@@ -1,13 +1,23 @@
-from fastapi import APIRouter, Depends, Request
-from sqlalchemy.orm import Session
-from sqlalchemy import select
+from typing import Annotated
 
-from app.common.base_response import success_response
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy.orm import Session
+from sqlalchemy import func, or_, select
+
+from app.common.base_response import PaginationResponse, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
 from app.User.database import User
-from app.User.schemas import UpdateUserRequest, UserInfoResponse
+from app.User.schemas import (
+    CreateUserRequest,
+    ListUserRequest,
+    UpdateUserByIdRequest,
+    UpdateUserRequest,
+    UpdateUserStatusRequest,
+    UserInfoResponse,
+)
+from app.utils.bcrypt import hash_password
 
 user_router = APIRouter(prefix="/user", tags=["用户管理"])
 
@@ -52,7 +62,7 @@ def update_user(
 
 
 # 获取用户信息接口
-@user_router.get("/getInfo")
+@user_router.get("/getInfo", summary="获取用户信息", description="获取用户信息")
 def get_user_info(request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user_id
     stmt = select(User).where(User.id == user_id)
@@ -60,3 +70,115 @@ def get_user_info(request: Request, db: Session = Depends(get_db)):
     if not user:
         raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
     return success_response(data=UserInfoResponse.model_validate(user))
+
+
+@user_router.post("/create", summary="创建用户", description="创建用户")
+def create_user(
+    request: Request, create_dto: CreateUserRequest, db: Session = Depends(get_db)
+):
+    stmt = select(User).where(User.username == create_dto.username)
+    user = db.execute(stmt).scalar_one_or_none()
+    if user:
+        raise BusinessError(code=Code.ACCOUNT_SAME, message="用户已存在")
+    new_user = User(
+        username=create_dto.username,
+        password=hash_password(create_dto.password),
+        name=create_dto.name,
+        email=create_dto.email,
+        phone=create_dto.phone,
+    )
+
+    db.add(new_user)
+
+    return success_response(message="创建成功")
+
+
+# 修改指定用户
+@user_router.put("/updateById", summary="修改指定用户", description="修改指定用户")
+def update_user_by_id(payload: UpdateUserByIdRequest, db: Session = Depends(get_db)):
+    """按 id 修改任意用户,放开了 role / status / password。
+
+    与 /update(改自己)的区别:id 来自请求体而不是 token;字段范围更大。
+    目前没有管理员校验,任何登录用户都能调 —— 加权限时在这里补。
+    """
+    user = db.get(User, payload.id)
+    if user is None:
+        raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
+
+    data = payload.model_dump(exclude_unset=True, exclude_none=True, exclude={"id"})
+
+    # password 是唯一「写入前必须变形」的字段:库里存的是 bcrypt 哈希,
+    # 直接 setattr 明文进去等于把密码换成明文,之后 verify_password 全对不上。
+    password = data.pop("password", None)
+    if password is not None:
+        user.password = hash_password(password)
+
+    for field, value in data.items():
+        setattr(user, field, value)
+
+    return success_response(message="修改成功")
+
+
+# 启用 / 禁用用户
+@user_router.put(
+    "/updateStatus", summary="启用或禁用用户", description="启用或禁用用户"
+)
+def update_user_status(payload: UpdateUserStatusRequest, db: Session = Depends(get_db)):
+    user = db.get(User, payload.id)
+    if user is None:
+        raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
+
+    user.status = payload.status
+
+    return success_response(message="操作成功")
+
+
+# 分页查询用户
+@user_router.get("/list", summary="分页查询用户", description="分页查询用户")
+def list_users(
+    payload: Annotated[ListUserRequest, Query()], db: Session = Depends(get_db)
+):
+    """按关键字分页查询用户,返回 {total, page, pageSize, data}。
+
+    payload 是个 Pydantic 模型,但 Annotated[..., Query()] 把它声明成了查询参数,
+    不是请求体 —— GET 带 body 会被不少客户端/代理直接丢掉,必须走 query string。
+
+    不分页之外的筛选只有 keyword:同时模糊匹配 username 和 name,不传则返回全部。
+    """
+    conditions = []
+    if payload.keyword:
+        # 参数化绑定由 SQLAlchemy 的 like() 负责,不做字符串拼 SQL —— 否则是注入。
+        like = f"%{payload.keyword}%"
+        conditions.append(or_(User.username.like(like), User.name.like(like)))
+
+    # total 必须单独 count 一次,不能拿 len(users) 顶替:那是当前页的条数,不是总数。
+    total = db.scalar(select(func.count()).select_from(User).where(*conditions))
+
+    stmt = (
+        select(User)
+        .where(*conditions)
+        # 显式排序:不写 order_by 时 MySQL 不保证返回顺序,
+        # 翻页会出现同一条记录重复或漏掉。
+        .order_by(User.id.asc())
+        .offset((payload.page - 1) * payload.pageSize)
+        .limit(payload.pageSize)
+    )
+    users = db.execute(stmt).scalars().all()
+
+    return success_response(
+        data=PaginationResponse(
+            records=[UserInfoResponse.model_validate(user) for user in users],
+            total=total or 0,
+            page=payload.page,
+            pageSize=payload.pageSize,
+        )
+    )
+
+
+@user_router.delete("/delete", summary="删除用户", description="删除用户")
+def delete_user(userId: int, db: Session = Depends(get_db)):
+    user = db.get(User, userId)
+    if user is None:
+        raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
+    db.delete(user)
+    return success_response(message="删除成功")

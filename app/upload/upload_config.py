@@ -14,7 +14,7 @@ max_file_size = 1024 * 1024 * 10  # 10MB
 allowed_files = [".jpg", ".png", ".jpeg", ".gif", ".pdf", ".txt", ".word"]
 
 
-@file_router.post("/upload")
+@file_router.post("/upload",summary="上传文件",description="上传文件")
 def upload_file(file: UploadFile = File(...)):
     """上传文件"""
     if not file.filename:

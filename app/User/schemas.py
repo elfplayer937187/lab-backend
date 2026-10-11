@@ -1,4 +1,4 @@
-from typing import Optional, Self
+from typing import Literal, Optional, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -12,7 +12,7 @@ class UserInfoResponse(BaseModel):
     一旦别处代码先读了它就会被加载,跟着响应一起泄露给前端。
     写死字段,接口契约才稳。
     """
-
+    id: int
     username: str
     name: str
     role: str
@@ -56,3 +56,72 @@ class UpdateUserRequest(BaseModel):
         if not self.model_dump(exclude_unset=True, exclude_none=True):
             raise ValueError('至少要提交一个待更新的字段')
         return self
+
+class CreateUserRequest(BaseModel):
+    """创建用户。"""
+
+    username: str = Field(..., min_length=2, max_length=50)
+    password: str = Field(..., min_length=6, max_length=50)
+    name: str = Field(..., min_length=2, max_length=50)
+    email: Optional[str] = Field(None, max_length=50)
+    phone: Optional[str] = Field()
+
+
+class UpdateUserStatusRequest(BaseModel):
+    """启用 / 禁用指定用户。
+
+    status 用 Literal[0, 1] 而不是 int:取值范围和 Swagger 的下拉框一起到手,
+    不用再写 ge/le 两个约束。
+    """
+
+    id: int = Field(..., ge=1)
+    status: Literal[0, 1]
+
+
+class UpdateUserByIdRequest(BaseModel):
+    """修改指定用户。字段全部可选,只提交要改的那几项。
+
+    与 UpdateUserRequest(改自己)的差异:
+      - 多一个 id,指明改谁
+      - 放开 role / status / password
+      - 依旧排除 username 和 avatar:username 是登录凭据,改了等于换账号;
+        avatar 走上传接口,不在这里改
+
+    password 传的是明文,由路由 bcrypt 哈希后再落库。
+    取值约定与 UpdateUserRequest 一致:model_dump(exclude_unset=True, exclude_none=True),
+    清空字段传 '',不传 null。
+    """
+
+    id: int = Field(..., ge=1)
+    name: Optional[str] = Field(None, min_length=2, max_length=50)
+    email: Optional[str] = Field(None, max_length=50)
+    phone: Optional[str] = Field(None, pattern=r'^1[3-9]\d{9}$|^$')
+    role: Optional[Literal['student', 'admin']] = None
+    status: Optional[Literal[0, 1]] = None
+    password: Optional[str] = Field(None, min_length=6, max_length=50)
+
+    model_config = ConfigDict(extra='forbid')
+
+    @model_validator(mode='after')
+    def _require_at_least_one_field(self) -> Self:
+        # id 是定位参数,不是待改字段,判定时必须排掉,
+        # 否则 {"id": 1} 这种一个字段都没改的请求会校验通过、返回成功却什么都没做。
+        if not self.model_dump(
+            exclude_unset=True, exclude_none=True, exclude={'id'}
+        ):
+            raise ValueError('至少要提交一个待更新的字段')
+        return self
+
+
+class ListUserRequest(BaseModel):
+    """分页查询用户的查询参数。
+
+    pageSize 设了上限 100:不设的话一次 pageSize=100000 就能把整表拉出来,
+    既拖垮数据库,又变相绕过了分页。
+
+    keyword 同时匹配 username 和 name(OR),不传则不过滤。
+    """
+
+    page: int = Field(1, ge=1)
+    pageSize: int = Field(10, ge=1, le=100)
+    keyword: Optional[str] = Field(None, max_length=50)
