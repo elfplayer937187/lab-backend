@@ -27,20 +27,18 @@ class TokenPayload(TypedDict):
 
     username: str
     userId: int
-    role: str
     iss: str
     exp: datetime | int
     iat: datetime | int
 
 
 # 创建token
-def create_access_token(user_id: int, username: str, role: str) -> str:
+def create_access_token(user_id: int, username: str) -> str:
     now = datetime.now(tz=timezone.utc)
     expire_time = now + timedelta(hours=settings.JWT_EXPIRATION_HOURS)
     payload: TokenPayload = {
         'username': username,
         'userId': user_id,
-        'role': role,
         'exp': expire_time,
         'iat': now,
         'iss': ISSUER,

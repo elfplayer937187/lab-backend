@@ -12,12 +12,12 @@ class UserInfoResponse(BaseModel):
     一旦别处代码先读了它就会被加载,跟着响应一起泄露给前端。
     写死字段,接口契约才稳。
     """
+
     id: int
     username: str
     name: str
-    role: str
     email: Optional[str] = Field(None, max_length=50)
-    phone: Optional[str] = Field(None, pattern=r'^1[3-9]\d{9}$')
+    phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$")
     avatar: Optional[str] = None
     status: int
 
@@ -28,34 +28,34 @@ class UserInfoResponse(BaseModel):
 class UpdateUserRequest(BaseModel):
     """更新自己的资料。字段全部可选,只提交需要改的那几项。
 
-    按产品约定,这里**只放用户自己能改的字段**:name / email / phone / avatar。
-    role 和 status 是管理员权限,不在此列;username 是登录凭据,也不许改。
-    约束值(max_length 等)与 User 表的列宽保持一致,否则超长会在写库时才炸。
+        按产品约定,这里**只放用户自己能改的字段**:name / email / phone / avatar。
+    username 是登录凭据,也不许改。
+        约束值(max_length 等)与 User 表的列宽保持一致,否则超长会在写库时才炸。
 
-    两条取值约定,路由里必须照做(否则会 500 或误清数据):
-      1. 用 model_dump(exclude_unset=True, exclude_none=True) —— 没传的字段、以及
-         显式传 null 的字段,都不写回数据库。
-      2. 因此**清空一个字段要传空字符串 ''**,不能传 null。
-         name 列是 NOT NULL,传 {"name": null} 直接 422 而不是把库里改成 NULL。
+        两条取值约定,路由里必须照做(否则会 500 或误清数据):
+          1. 用 model_dump(exclude_unset=True, exclude_none=True) —— 没传的字段、以及
+             显式传 null 的字段,都不写回数据库。
+          2. 因此**清空一个字段要传空字符串 ''**,不能传 null。
+             name 列是 NOT NULL,传 {"name": null} 直接 422 而不是把库里改成 NULL。
     """
 
     name: Optional[str] = Field(None, min_length=2, max_length=50)
     email: Optional[str] = Field(None, max_length=50)
     # |^$ 是给「清空手机号」留的路:空字符串放行,其余必须符合大陆手机号格式
-    phone: Optional[str] = Field(None, pattern=r'^1[3-9]\d{9}$|^$')
+    phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$|^$")
     avatar: Optional[str] = Field(None, max_length=50)
 
     # extra='forbid':拒绝未声明的字段。上面的注释说了哪些字段被刻意排除在外,
-    # 传了直接 422,避免「多带一个 role: admin 就把自己提成管理员」这类越权改写。
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def _require_at_least_one_field(self) -> Self:
         # 判定口径必须和路由里的 model_dump 保持一致,否则 {"name": null} 这种
         # 会「校验通过但一个字段都没写」,接口返回成功却什么都没改。
         if not self.model_dump(exclude_unset=True, exclude_none=True):
-            raise ValueError('至少要提交一个待更新的字段')
+            raise ValueError("至少要提交一个待更新的字段")
         return self
+
 
 class CreateUserRequest(BaseModel):
     """创建用户。"""
@@ -83,7 +83,7 @@ class UpdateUserByIdRequest(BaseModel):
 
     与 UpdateUserRequest(改自己)的差异:
       - 多一个 id,指明改谁
-      - 放开 role / status / password
+      - 放开status / password
       - 依旧排除 username 和 avatar:username 是登录凭据,改了等于换账号;
         avatar 走上传接口,不在这里改
 
@@ -95,21 +95,18 @@ class UpdateUserByIdRequest(BaseModel):
     id: int = Field(..., ge=1)
     name: Optional[str] = Field(None, min_length=2, max_length=50)
     email: Optional[str] = Field(None, max_length=50)
-    phone: Optional[str] = Field(None, pattern=r'^1[3-9]\d{9}$|^$')
-    role: Optional[Literal['student', 'admin']] = None
+    phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$|^$")
     status: Optional[Literal[0, 1]] = None
     password: Optional[str] = Field(None, min_length=6, max_length=50)
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def _require_at_least_one_field(self) -> Self:
         # id 是定位参数,不是待改字段,判定时必须排掉,
         # 否则 {"id": 1} 这种一个字段都没改的请求会校验通过、返回成功却什么都没做。
-        if not self.model_dump(
-            exclude_unset=True, exclude_none=True, exclude={'id'}
-        ):
-            raise ValueError('至少要提交一个待更新的字段')
+        if not self.model_dump(exclude_unset=True, exclude_none=True, exclude={"id"}):
+            raise ValueError("至少要提交一个待更新的字段")
         return self
 
 

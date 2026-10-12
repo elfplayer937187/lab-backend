@@ -28,13 +28,12 @@ async def login(LoginInfo: LoginRequest, db: Session = Depends(get_db)):
 
     if user.status != 1:
         raise BusinessError(code=Code.USER_DISABLED, message='用户被禁用', http_status=403)
-    token = create_access_token(user.id, user.username, user.role)
+    token = create_access_token(user.id, user.username)
     return success_response(
         data={
             'userId': user.id,
             'username': user.username,
             'name': user.name,
-            'role': user.role,
             'email': user.email,
             'phone': user.phone,
             'avatar': user.avatar,
@@ -58,7 +57,6 @@ async def register(RegisterInfo: RegisterRequest, db: Session = Depends(get_db))
         name=RegisterInfo.name or '未知',
         email=RegisterInfo.email or '',
         phone=RegisterInfo.phone or '',
-        role='student',
         status=1,
     )
     db.add(user)

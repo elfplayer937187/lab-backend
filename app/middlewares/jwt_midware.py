@@ -55,7 +55,6 @@ class JWTMiddleWare(BaseHTTPMiddleware):
             )
 
         request.state.username = payload['username']
-        request.state.role = payload['role']
         request.state.user_id = payload['userId']
 
         return await call_next(request)

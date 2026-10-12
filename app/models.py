@@ -10,6 +10,7 @@ SQLAlchemy 靠 import 的副作用把表注册到 Base.metadata:只有模型类�
 ⚠️ 新增模型模块时,务必在这里追加一行导入。
 """
 
+from app.Role.database import Role
 from app.User.database import User
 
-__all__ = ['User']
+__all__ = ['User', 'Role']

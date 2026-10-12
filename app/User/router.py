@@ -50,7 +50,7 @@ def update_user(
     # exclude_unset 只写显式传上来的字段,exclude_none 顺手挡掉显式 null
     # (name 列是 NOT NULL,写进 None 会抛 IntegrityError → 500)。
     # setattr 对任意字段名都成立,安全性由 UpdateUserRequest 兜底:extra='forbid'
-    # 已挡住 role / status / password 这些没声明的字段,传了就是 422。
+    # 已挡住  status / password 这些没声明的字段,传了就是 422。
     for field, value in payload.model_dump(
         exclude_unset=True, exclude_none=True
     ).items():
@@ -96,7 +96,7 @@ def create_user(
 # 修改指定用户
 @user_router.put("/updateById", summary="修改指定用户", description="修改指定用户")
 def update_user_by_id(payload: UpdateUserByIdRequest, db: Session = Depends(get_db)):
-    """按 id 修改任意用户,放开了 role / status / password。
+    """按 id 修改任意用户,放开了 status / password。
 
     与 /update(改自己)的区别:id 来自请求体而不是 token;字段范围更大。
     目前没有管理员校验,任何登录用户都能调 —— 加权限时在这里补。

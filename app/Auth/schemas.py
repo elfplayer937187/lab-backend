@@ -12,7 +12,6 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     username: str
     name: str
-    role: str
     email: Optional[str] = Field(None, max_length=50)
     phone: Optional[str] = Field(None, pattern=r'^1[3-9]\d{9}$')
     avatar: Optional[str] = None
