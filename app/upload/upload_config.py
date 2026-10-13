@@ -1,13 +1,17 @@
 import uuid
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 import os
+
+from fastapi.security import HTTPBearer
 from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from pathlib import Path
 from datetime import datetime
 from app.config import UPLOAD_DIR
 
-file_router = APIRouter(tags=["文件管理"])
+api_bearer=HTTPBearer()
+
+file_router = APIRouter(tags=["文件管理"],dependencies=[Depends(api_bearer)])
 
 max_file_size = 1024 * 1024 * 10  # 10MB
 
@@ -48,6 +52,6 @@ def upload_file(file: UploadFile = File(...)):
             "origin_name": origin_name,
             "disk_name": disk_name,
             "size": file.size,
-            "url": f"uploads/{disk_name}",
+            "url": f"/uploads/{disk_name}",
         }
     )

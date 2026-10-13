@@ -10,12 +10,13 @@ from app.utils.jwt import get_token_from_request, verify_access_token
 # 空字符串或漏掉开头斜杠的写法永远匹配不上。
 WHITE_LIST = frozenset(
     {
-        '/api/auth/login',  # 登录本身不能要求 token,否则没有 token 就换不到 token
-        '/api/auth/register',
-        '/docs',
-        '/docs/oauth2-redirect',
-        '/openapi.json',  # /docs 页面靠它拿接口定义,不放行则文档列表是空的
-        '/redoc',
+        "/api/auth/login",  # 登录本身不能要求 token,否则没有 token 就换不到 token
+        "/api/auth/register",
+        "/docs",
+        "/docs/oauth2-redirect",
+        "/openapi.json",  # /docs 页面靠它拿接口定义,不放行则文档列表是空的
+        "/redoc",
+        "/uploads/*",
     }
 )
 
@@ -36,6 +37,8 @@ class JWTMiddleWare(BaseHTTPMiddleware):
         super().__init__(app)
 
     async def dispatch(self, request: Request, call_next):
+        if request.url.path.startswith("/uploads"):
+            return await call_next(request)
         print(request.url.path)
         if request.url.path in WHITE_LIST:
             return await call_next(request)
@@ -54,7 +57,7 @@ class JWTMiddleWare(BaseHTTPMiddleware):
                 content=error_response(e.code, e.message, e.data).model_dump(),
             )
 
-        request.state.username = payload['username']
-        request.state.user_id = payload['userId']
+        request.state.username = payload["username"]
+        request.state.user_id = payload["userId"]
 
         return await call_next(request)

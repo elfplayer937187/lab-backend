@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_, select
 
@@ -19,7 +20,9 @@ from app.User.schemas import (
 )
 from app.utils.bcrypt import hash_password
 
-user_router = APIRouter(prefix="/user", tags=["用户管理"])
+api_bearer = HTTPBearer()
+
+user_router = APIRouter(prefix="/user", tags=["用户管理"],dependencies=[Depends(api_bearer)])
 
 
 @user_router.put("/update", description="修改个人资料", summary="修改个人资料")
@@ -176,8 +179,8 @@ def list_users(
 
 
 @user_router.delete("/delete", summary="删除用户", description="删除用户")
-def delete_user(userId: int, db: Session = Depends(get_db)):
-    user = db.get(User, userId)
+def delete_user(id: int, db: Session = Depends(get_db)):
+    user = db.get(User, id)
     if user is None:
         raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
     db.delete(user)

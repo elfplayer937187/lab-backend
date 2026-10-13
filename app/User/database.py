@@ -1,5 +1,3 @@
-from typing import Literal
-
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, deferred, mapped_column
 
@@ -27,4 +25,3 @@ class User(Base):
     @property
     def is_active(self) -> bool:
         return self.status == 1
-

@@ -17,7 +17,9 @@ class UserInfoResponse(BaseModel):
     username: str
     name: str
     email: Optional[str] = Field(None, max_length=50)
-    phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$")
+    # |^$ 与 UpdateUserRequest 一致:写路径允许把手机号清空成 '',读模型就得放行,
+    # 否则清空过手机号的用户一被查出来就 500(正则不匹配 → ValidationError)。
+    phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$|^$")
     avatar: Optional[str] = None
     status: int
 
@@ -121,4 +123,4 @@ class ListUserRequest(BaseModel):
 
     page: int = Field(1, ge=1)
     pageSize: int = Field(10, ge=1, le=100)
-    keyword: Optional[str] = Field(None, max_length=50)
+    keyword: Optional[str] = Field('', max_length=50)
