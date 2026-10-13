@@ -66,9 +66,19 @@ def verify_access_token(token: str) -> TokenPayload:
     return cast(TokenPayload, payload)
 
 
-# 从请求投提取token内容
+# 从请求头提取token内容
 def get_token_from_request(request: Request) -> str:
-    token = request.headers.get('token')
-    if not token:
+    # HTTP header 名不区分大小写:Starlette 的 Headers 按小写比较,
+    # 所以这里写 'Authorization' 也能匹配到客户端发来的 authorization。
+    authorization = request.headers.get('Authorization')
+    if not authorization:
         raise BusinessError(code=Code.TOKEN_INVALID, message='未找到token')
+
+    # 按 RFC 6750 拆出方案名和凭证。方案名规定是 Bearer,但客户端
+    # 写成 bearer 的不少,统一转小写比较。没有空格或凭证为空都算格式错。
+    
+    scheme, _, token = authorization.partition(' ')
+    if scheme.lower() != 'bearer' or not token:
+        raise BusinessError(code=Code.TOKEN_INVALID, message='token格式错误')
+
     return token

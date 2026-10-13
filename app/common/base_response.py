@@ -22,7 +22,7 @@ class PaginationResponse(BaseModel, Generic[T]):
 
 
 def success_response(
-    data: Optional[T] = None, message: Optional[str] = None
+    data: Optional[T] = None, message: Optional[str] = '成功'
 ) -> BaseResponse:
     return BaseResponse(code=200, message=message, data=data)
 

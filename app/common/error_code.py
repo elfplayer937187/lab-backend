@@ -17,7 +17,9 @@ class Code:
     USER_DISABLED = 232  # 用户被禁用
     UNKNOWN_ERROR = 240  # 未知错误
 
-
+    #实验室
+    LAB_NOT_EXIST = 250  # 实验室不存在
+    LAB_EXIST = 251  # 实验室已存在
 # 业务码 → HTTP 状态码的兜底映射。
 #
 # 只在抛 BusinessError 时没显式传 http_status 才用得上。同一个业务码在不同接口
@@ -40,4 +42,7 @@ HTTP_STATUS: dict[int, int] = {
     Code.USER_NOT_EXIST: 404,
     Code.USER_DISABLED: 403,
     Code.UNKNOWN_ERROR: 500,
+    #实验室
+    Code.LAB_NOT_EXIST: 450,
+    Code.LAB_EXIST: 451,
 }
