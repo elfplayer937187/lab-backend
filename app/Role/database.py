@@ -16,3 +16,5 @@ class Role(Base):
     )
     description: Mapped[str | None] = mapped_column(String(255), nullable=True, comment='描述')
     status: Mapped[int] = mapped_column(default=1, comment='状态: 0-禁用,1-启用')
+
+

@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Self
+from typing import List, Literal, Optional, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -25,6 +25,16 @@ class UserInfoResponse(BaseModel):
 
     # 可以直接从 ORM 模型创建 Pydantic 模型
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserListItemResponse(UserInfoResponse):
+    """用户列表项:在用户信息基础上多带一份角色名。
+
+    单独继承而不是直接往 UserInfoResponse 上加:/getInfo 复用了后者,
+    加在那里会让那个接口无端多出一个永远是空数组的 roles 字段。
+    """
+
+    roles: List[str] = Field(default_factory=list)
 
 
 class UpdateUserRequest(BaseModel):
@@ -123,4 +133,20 @@ class ListUserRequest(BaseModel):
 
     page: int = Field(1, ge=1)
     pageSize: int = Field(10, ge=1, le=100)
-    keyword: Optional[str] = Field('', max_length=50)
+    keyword: Optional[str] = Field("", max_length=50)
+
+
+class AssignRoleRequest(BaseModel):
+    """分配角色请求体。"""
+
+    userId: int = Field(..., ge=1)
+    roleId: List[int]
+
+
+class AllRolesResponse(BaseModel):
+    """获取所有角色列表。"""
+
+    id: int
+    name: str
+    check: bool
+    model_config = ConfigDict(from_attributes=True)

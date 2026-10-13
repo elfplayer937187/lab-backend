@@ -1,28 +1,36 @@
 from typing import Annotated
+from xml.etree.ElementInclude import include
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 
+from app.Role.database import Role
 from app.common.base_response import PaginationResponse, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
+from app.common.junction.database import UserRole
 from app.database import get_db
 from app.User.database import User
 from app.User.schemas import (
+    AllRolesResponse,
+    AssignRoleRequest,
     CreateUserRequest,
     ListUserRequest,
     UpdateUserByIdRequest,
     UpdateUserRequest,
     UpdateUserStatusRequest,
     UserInfoResponse,
+    UserListItemResponse,
 )
 from app.utils.bcrypt import hash_password
 
 api_bearer = HTTPBearer()
 
-user_router = APIRouter(prefix="/user", tags=["用户管理"],dependencies=[Depends(api_bearer)])
+user_router = APIRouter(
+    prefix="/user", tags=["用户管理"], dependencies=[Depends(api_bearer)]
+)
 
 
 @user_router.put("/update", description="修改个人资料", summary="修改个人资料")
@@ -157,6 +165,7 @@ def list_users(
     # total 必须单独 count 一次,不能拿 len(users) 顶替:那是当前页的条数,不是总数。
     total = db.scalar(select(func.count()).select_from(User).where(*conditions))
 
+    # 所有角色
     stmt = (
         select(User)
         .where(*conditions)
@@ -168,9 +177,29 @@ def list_users(
     )
     users = db.execute(stmt).scalars().all()
 
+    # 连表查已启用和已禁用的角色都带上:展示的是"他实际拥有什么",
+
+    role_rows = db.execute(
+        select(UserRole.user_id, Role.name)
+        .join(Role, Role.id == UserRole.role_id)
+        .where(UserRole.user_id.in_([user.id for user in users]))
+        # 不写 order_by 时 MySQL 不保证顺序,角色名的排列会随机变化
+        .order_by(UserRole.user_id, Role.id)
+    ).all()
+    roles_map: dict[int, list[str]] = {}
+    for user_id, role_name in role_rows:
+        roles_map.setdefault(user_id, []).append(role_name)
+
+    records = []
+    
+    for user in users:
+        item = UserListItemResponse.model_validate(user)
+        item.roles = roles_map.get(user.id, [])
+        records.append(item)
+
     return success_response(
         data=PaginationResponse(
-            records=[UserInfoResponse.model_validate(user) for user in users],
+            records=records,
             total=total or 0,
             page=payload.page,
             pageSize=payload.pageSize,
@@ -185,3 +214,54 @@ def delete_user(id: int, db: Session = Depends(get_db)):
         raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
     db.delete(user)
     return success_response(message="删除成功")
+
+
+# 分配角色
+@user_router.post("/assign_role", summary="分配角色", description="分配角色")
+def assign_role(payload: AssignRoleRequest, db: Session = Depends(get_db)):
+    user = db.scalar(select(User).where(User.id == payload.userId))
+    if not user:
+        raise BusinessError(
+            code=Code.USER_NOT_EXIST,
+            message="用户不存在",
+            http_status=Code.USER_NOT_EXIST,
+        )
+    all_role_ids = db.scalars(select(Role.id)).all()
+
+    if any(role_id not in all_role_ids for role_id in payload.roleId):
+        raise BusinessError(
+            code=Code.ROLE_NOT_EXIST,
+            message="角色不存在",
+            http_status=Code.ROLE_NOT_EXIST,
+        )
+    # 先清除已有角色
+    stmt = delete(UserRole).where(UserRole.user_id == payload.userId)
+    db.execute(stmt)
+    # 批量加入角色
+    db.add_all(
+        [
+            UserRole(user_id=payload.userId, role_id=role_id)
+            for role_id in payload.roleId
+        ]
+    )
+    return success_response(message="成功")
+
+
+# 获取所有角色
+@user_router.get(
+    "/getAllRoles/{userId}", summary="获取所有角色", description="获取所有角色"
+)
+def get_role_list(userId: int, request: Request, db: Session = Depends(get_db)):
+    # 获取用户已拥有的角色id
+    haved_role = set(
+        db.scalars(select(UserRole.role_id).where(UserRole.user_id == userId)).all()
+    )
+    # 获取所有启用中的角色,并标记用户是否已拥有
+    all_role = db.execute(select(Role.id, Role.name).where(Role.status == 1)).all()
+    return success_response(
+        data=[
+            {"id": role_id, "name": name, "check": role_id in haved_role}
+            for role_id, name in all_role
+        ],
+        message="成功",
+    )
