@@ -17,6 +17,9 @@ class Code:
     USER_DISABLED = 232  # 用户被禁用
     UNKNOWN_ERROR = 240  # 未知错误
 
+    # 菜单
+    MENU_NOT_EXIST = 241
+    MENU_NOT_EMPTY = 242
     # 实验室
     LAB_NOT_EXIST = 250  # 实验室不存在
     LAB_EXIST = 251  # 实验室已存在

@@ -36,7 +36,6 @@ async def RequestValidationErrorHandler(
         content=error_response(Code.PARAM_ERROR, '参数错误', _flatten_errors(exc)).model_dump(),
     )
 
-
 # 兜底filter
 async def UnhandledErrorHandler(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
