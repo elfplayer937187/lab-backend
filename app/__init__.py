@@ -1,11 +1,11 @@
 from fastapi import APIRouter
 
 from app.auth.router import router as auth_router
-from app.lab.router import lab_router
-from app.Role.router import role_router
+from app.modules.lab.router import lab_router
+from app.modules.Role.router import role_router
 from app.upload.upload_config import file_router
-from app.User.router import user_router
-from app.Permission.router import menu_router
+from app.modules.User.router import user_router
+from app.modules.Permission.router import menu_router
 apiRouter = APIRouter(prefix='/api')
 
 apiRouter.include_router(auth_router)

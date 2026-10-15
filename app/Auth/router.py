@@ -7,7 +7,7 @@ from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
-from app.User.database import User
+from app.modules.User.database import User
 from app.utils.bcrypt import hash_password, verify_password
 from app.utils.jwt import create_access_token
 

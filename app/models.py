@@ -11,9 +11,9 @@ SQLAlchemy 靠 import 的副作用把表注册到 Base.metadata:只有模型类�
 """
 
 from app.common.junction.database import RolePermission, UserRole
-from app.lab.database import Lab
-from app.Permission.database import Permission
-from app.Role.database import Role
-from app.User.database import User
+from app.modules.lab.database import Lab
+from app.modules.Permission.database import Permission
+from app.modules.Role.database import Role
+from app.modules.User.database import User
 
 __all__ = ['User', 'Role', 'Permission', 'UserRole', 'RolePermission', 'Lab']

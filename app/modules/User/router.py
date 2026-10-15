@@ -6,14 +6,14 @@ from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import delete, func, or_, select
 
-from app.Role.database import Role
+from app.modules.Role.database import Role
 from app.common.base_response import PaginationResponse, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.common.junction.database import UserRole
 from app.database import get_db
-from app.User.database import User
-from app.User.schemas import (
+from app.modules.User.database import User
+from app.modules.User.schemas import (
     AllRolesResponse,
     AssignRoleRequest,
     CreateUserRequest,
@@ -191,7 +191,7 @@ def list_users(
         roles_map.setdefault(user_id, []).append(role_name)
 
     records = []
-    
+
     for user in users:
         item = UserListItemResponse.model_validate(user)
         item.roles = roles_map.get(user.id, [])

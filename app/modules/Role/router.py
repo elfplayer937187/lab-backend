@@ -9,8 +9,8 @@ from app.common.base_response import pagination_response, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
-from app.Role.database import Role
-from app.Role.schemas import (
+from app.modules.Role.database import Role
+from app.modules.Role.schemas import (
     CreateRoleRequest,
     GetRoleListRequest,
     GetRoleListResponse,

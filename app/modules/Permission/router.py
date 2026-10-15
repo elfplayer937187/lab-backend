@@ -4,8 +4,8 @@ import rich
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from app.Permission.database import Permission
-from app.Permission.schemas import (
+from app.modules.Permission.database import Permission
+from app.modules.Permission.schemas import (
     CreateMenuRequest,
     CreateMenuResponse,
     MenuTreeResponse,
@@ -98,5 +98,3 @@ def delete_menu(menu_id: int, db: Session = Depends(get_db)):
         raise BusinessError(code=Code.MENU_NOT_EMPTY, message="菜单下有子菜单")
     db.delete(menu)
     return success_response(message="删除成功")
-
-

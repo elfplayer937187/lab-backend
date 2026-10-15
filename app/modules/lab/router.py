@@ -6,13 +6,13 @@ import rich
 from sqlalchemy import and_, or_, select, func
 from sqlalchemy.orm import Session
 
-from app.User.database import User
+from app.modules.User.database import User
 from app.common.base_response import pagination_response, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
-from app.lab.database import Lab
-from app.lab.schemas import (
+from app.modules.lab.database import Lab
+from app.modules.lab.schemas import (
     CreateLabRequest,
     GetLabListRequest,
     GetLabListResponse,
