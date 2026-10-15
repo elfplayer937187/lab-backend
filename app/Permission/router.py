@@ -66,7 +66,7 @@ def update_menu(payload: UpdateMenuRequest, db: Session = Depends(get_db)):
 #
 @menu_router.get("/tree", summary="获取菜单树", description="获取菜单树")
 def get_menu_tree(db: Session = Depends(get_db)):
-    stmt = select(Permission).where(Permission.status == 1)
+    stmt = select(Permission)
     # 原始orm的menu平铺列表
     menus = db.scalars(stmt).all()
 
@@ -90,7 +90,7 @@ def get_menu_tree(db: Session = Depends(get_db)):
 
 @menu_router.delete("/delete/{menu_id}", description="删除菜单", summary="删除菜单")
 def delete_menu(menu_id: int, db: Session = Depends(get_db)):
-    menu = db.scalars(select(Permission).where(Permission.id == menu_id))
+    menu = db.scalar(select(Permission).where(Permission.id == menu_id))
     if menu is None:
         raise BusinessError(code=Code.MENU_NOT_EXIST, message="菜单不存在")
     child = db.scalar(select(Permission).where(Permission.pid == menu_id))
@@ -98,3 +98,5 @@ def delete_menu(menu_id: int, db: Session = Depends(get_db)):
         raise BusinessError(code=Code.MENU_NOT_EMPTY, message="菜单下有子菜单")
     db.delete(menu)
     return success_response(message="删除成功")
+
+
