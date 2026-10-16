@@ -23,11 +23,11 @@ class Code:
     # 实验室
     LAB_NOT_EXIST = 250  # 实验室不存在
     LAB_EXIST = 251  # 实验室已存在
+    LAB_BOOK_CONFLICT = 261
 
     # 角色
     ROLE_NOT_EXIST = 252  # 角色不存在
     ROLE_EXIST = 253  # 角色已存在
-
 
 # 业务码 → HTTP 状态码的兜底映射。
 #
@@ -54,6 +54,7 @@ HTTP_STATUS: dict[int, int] = {
     # 实验室
     Code.LAB_NOT_EXIST: 450,
     Code.LAB_EXIST: 451,
+    Code.LAB_BOOK_CONFLICT: 452,
     # 角色
     Code.ROLE_NOT_EXIST: 404,
     Code.ROLE_EXIST: 409,

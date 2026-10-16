@@ -13,7 +13,12 @@ from app.config import UPLOAD_DIR
 from app.middlewares.jwt_midware import JWTMiddleWare
 from pathlib import Path
 
-app = FastAPI(title="FastAPI-Admin", description="FastAPI Admin", version="0.1.0")
+app = FastAPI(
+    title="FastAPI-Admin",
+    description="FastAPI Admin",
+    version="0.1.0",
+    swagger_ui_parameters={"persistAuthorization": True},
+)
 app.include_router(apiRouter)
 
 app.add_exception_handler(BusinessError, BusinessErrorHandler)  # type: ignore[arg-type]
@@ -26,7 +31,6 @@ if not Path(UPLOAD_DIR).exists():
     Path(UPLOAD_DIR).mkdir(parents=True)
 
 app.mount("/uploads", StaticFiles(directory=f"{UPLOAD_DIR}"), name="uploads")
-
 
 
 @app.get("/")

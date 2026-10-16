@@ -1,3 +1,4 @@
+from datetime import time
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -9,9 +10,9 @@ class CreateLabRequest(BaseModel):
     name: str
     description: Optional[str] = None
     capacity: Optional[int] = 0
-    image: Optional[str] = None
-    open_time: Optional[str] = None
-    close_time: Optional[str] = None
+    image: Optional[str] = Field(None, description="图片")
+    open_time: Optional[time] = Field(None, description="开放时间")
+    close_time: Optional[time] = Field(None, description="结束时间")
     manager_id: int = Field(default=1)
     status: Optional[Literal[0, 1]] = Field(default=1)
     building: int = Field(description="所属楼层")
@@ -44,6 +45,7 @@ class UpdateLabRequest(CreateLabRequest):
 
     id: int = Field(..., ge=1)
 
+
 class GetUserListResponse(BaseModel):
     """获取用户列表响应体。"""
 
@@ -52,3 +54,10 @@ class GetUserListResponse(BaseModel):
     # 从 ORM 对象(User)直接构造,和 UserInfoResponse 同一套做法。
     # 不开这个,Pydantic 只认 dict,传 User 实例会报 model_type 校验错。
     model_config = ConfigDict(from_attributes=True)
+
+
+class UpdateLabImageRequest(BaseModel):
+    """更新实验室图片请求体。"""
+
+    id: int = Field(..., ge=1)
+    imageUrl: str

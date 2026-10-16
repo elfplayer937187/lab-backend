@@ -17,6 +17,7 @@ from app.modules.lab.schemas import (
     GetLabListRequest,
     GetLabListResponse,
     GetUserListResponse,
+    UpdateLabImageRequest,
     UpdateLabRequest,
 )
 
@@ -122,10 +123,23 @@ def get_lab_detail(labId: int, db: Session = Depends(get_db)):
 
 @lab_router.get("/all/manager", summary="获取管理员列表", description="获取管理员列表")
 def get_manager_id(db: Session = Depends(get_db)):
-    users = (
-        db.execute(select(User.id, User.username).where(User.status == 1)).all()
-    )
+    users = db.execute(select(User.id, User.username).where(User.status == 1)).all()
     rich.print(users)
     return success_response(
         data=[GetUserListResponse.model_validate(user) for user in users]
     )
+
+
+@lab_router.post(
+    "/update/image", summary="更新实验室图片", description="更新实验室图片"
+)
+def update_lab_image(payload: UpdateLabImageRequest, db: Session = Depends(get_db)):
+    lab = db.get(Lab, payload.id)
+    if lab is None:
+        raise BusinessError(
+            code=Code.LAB_NOT_EXIST,
+            message="实验室不存在",
+            http_status=Code.LAB_NOT_EXIST,
+        )
+    lab.image = payload.imageUrl
+    return success_response()

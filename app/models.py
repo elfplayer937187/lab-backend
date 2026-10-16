@@ -15,5 +15,5 @@ from app.modules.lab.database import Lab
 from app.modules.Permission.database import Permission
 from app.modules.Role.database import Role
 from app.modules.User.database import User
-
-__all__ = ['User', 'Role', 'Permission', 'UserRole', 'RolePermission', 'Lab']
+from app.modules.lab_book.database import LabBook
+__all__ = ['User', 'Role', 'Permission', 'UserRole', 'RolePermission', 'Lab','LabBook']

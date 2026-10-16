@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import time
 from typing import Literal, Optional
 
 from pydantic import ConfigDict
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Integer, String, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -26,11 +26,11 @@ class Lab(Base):
     capacity: Mapped[int] = mapped_column(Integer, comment="容量", default=0)
     building: Mapped[int] = mapped_column(comment="所属楼层号")
     floor: Mapped[int] = mapped_column(comment="所属楼层")
-    area:Mapped[int] = mapped_column(comment="占地面积(m2)")
-    open_time: Mapped[str] = mapped_column(
-        String(40), comment="开放时间", nullable=True
+    area: Mapped[int] = mapped_column(comment="占地面积(m2)")
+    open_time: Mapped[Optional[time]] = mapped_column(
+        Time, comment="开放时间", default=time(8, 0)
     )
-    close_time: Mapped[str] = mapped_column(
-        String(40), comment="结束时间", nullable=True
+    close_time: Mapped[Optional[time]] = mapped_column(
+        Time, comment="结束时间", default=time(20, 0)
     )
     status: Mapped[Literal[0, 1]] = mapped_column(Integer, comment="状态", default=0)

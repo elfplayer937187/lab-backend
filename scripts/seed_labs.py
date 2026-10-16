@@ -5,9 +5,11 @@
 
 幂等:按 name 判断,已存在的实验室只更新其余字段,不重复插入。
 manager_id 复用 scripts/seed_users.py 建出的用户(root=1、zhangsan=2、lisi=3)。
+open_time / close_time 是 TIME 列,必须传 datetime.time,不能传 '08:00' 字符串。
 """
 
 import sys
+from datetime import time
 from pathlib import Path
 
 from sqlalchemy import select
@@ -20,7 +22,7 @@ from app.database import SessionLocal  # noqa: E402
 from app.models import Lab  # noqa: F401  通过 models 聚合入口确保表已注册
 
 # (name, manager_id, description, image, capacity, building, floor, area, open_time, close_time, status)
-SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, str, str, int]] = [
+SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, time, time, int]] = [
     (
         '人工智能实验室',
         1,
@@ -30,8 +32,8 @@ SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, str, str, i
         1,
         3,
         120,
-        '08:00',
-        '22:00',
+        time(8, 0),
+        time(22, 0),
         1,
     ),
     (
@@ -43,11 +45,23 @@ SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, str, str, i
         1,
         4,
         150,
-        '08:30',
-        '21:00',
+        time(8, 30),
+        time(21, 0),
         1,
     ),
-    ('网络安全实验室', 2, '攻防演练与渗透测试实训环境', None, 20, 2, 2, 90, '09:00', '20:00', 1),
+    (
+        '网络安全实验室',
+        2,
+        '攻防演练与渗透测试实训环境',
+        None,
+        20,
+        2,
+        2,
+        90,
+        time(9, 0),
+        time(20, 0),
+        1,
+    ),
     (
         '物联网实验室',
         2,
@@ -57,8 +71,8 @@ SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, str, str, i
         2,
         3,
         100,
-        '08:00',
-        '18:00',
+        time(8, 0),
+        time(18, 0),
         1,
     ),
     (
@@ -70,8 +84,8 @@ SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, str, str, i
         3,
         1,
         200,
-        '00:00',
-        '23:59',
+        time(0, 0),
+        time(23, 59),
         1,
     ),
     (
@@ -83,8 +97,8 @@ SEED_LABS: list[tuple[str, int, str, str | None, int, int, int, int, str, str, i
         3,
         5,
         160,
-        '08:00',
-        '18:00',
+        time(8, 0),
+        time(18, 0),
         0,
     ),
 ]
