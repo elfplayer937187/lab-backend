@@ -1,6 +1,6 @@
 from typing import Generic, Optional, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.common.error_code import Code
 
@@ -22,7 +22,7 @@ class PaginationResponse(BaseModel, Generic[T]):
 
 
 def success_response(
-    data: Optional[T] = None, message: Optional[str] = '成功'
+    data: Optional[T] = None, message: Optional[str] = "成功"
 ) -> BaseResponse:
     return BaseResponse(code=200, message=message, data=data)
 

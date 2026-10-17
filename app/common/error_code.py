@@ -27,7 +27,8 @@ class Code:
 
     # 角色
     ROLE_NOT_EXIST = 252  # 角色不存在
-    ROLE_EXIST = 253  # 角色已存在
+    ROLE_EXIST = 253
+    LAB_BOOK_NOT_EXIST = 254  # 角色已存在
 
 # 业务码 → HTTP 状态码的兜底映射。
 #

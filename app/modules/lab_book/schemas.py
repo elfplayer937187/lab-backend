@@ -3,6 +3,9 @@ from typing import Optional, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.common.business_error import BusinessError
+from app.common.error_code import Code
+
 
 class CreateLabBookRequest(BaseModel):
     """创建实验室预约请求体。"""
@@ -41,3 +44,29 @@ class LabBookListResponse(BaseModel):
     reviewer_remark: Optional[str] = Field(None)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class LabBookListWaitAcceptResponse(LabBookListResponse):
+    """待审核的实验室预约列表。"""
+
+    username: Optional[str] = Field(None)
+    image: Optional[str] = Field(None)
+    lab_name: Optional[str] = Field(None)
+
+
+class AcceptPayload(BaseModel):
+    """审核实验室预约请求体。"""
+
+    status: int
+    LabBookId: int
+    remark: Optional[str] = Field(None)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, v: int) -> int:
+        """校验状态。"""
+        if v not in (1, 2):
+            raise BusinessError(Code.PARAM_ERROR, message="状态只能为1或2")
+        return v

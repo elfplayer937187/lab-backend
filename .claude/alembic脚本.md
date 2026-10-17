@@ -2,4 +2,4 @@
 .\.venv\Scripts\alembic.exe revision --autogenerate -m "加了什么字段"
 
 # 2. 应用，真正改库
-.\.venv\Scripts\alembic.exe upgrade head
+.\.venv\Scripts\alembic.exe upgrade head    
