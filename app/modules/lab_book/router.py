@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from app.common.base_response import pagination_response, success_response
+from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
@@ -82,9 +82,9 @@ def get_lab_book_list_wait_accept(
     # total / 待审核 / 已通过 一次聚合查出来,省掉另外两次 COUNT,三个数也来自同一快照
     total, wait_accept, accept = db.execute(
         select(
-            func.count(LabBook.id).label('total'),
-            func.count(case((LabBook.status == 0, 1))).label('wait_accept'),
-            func.count(case((LabBook.status == 1, 1))).label('accept'),
+            func.count(LabBook.id).label("total"),
+            func.count(case((LabBook.status == 0, 1))).label("wait_accept"),
+            func.count(case((LabBook.status == 1, 1))).label("accept"),
         ).where(LabBook.reviewer_id == user_id)
     ).one()
     stmt = (

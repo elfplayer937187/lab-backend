@@ -3,7 +3,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-ENV_FILE = ROOT_DIR / '.env'
+ENV_FILE = ROOT_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -13,15 +13,18 @@ class Settings(BaseSettings):
     # JWT 配置
     JWT_SECRET_KEY: str
     JWT_EXPIRATION_HOURS: int = 24
-    JWT_ALGORITHM: str = 'HS256'
+    JWT_ALGORITHM: str = "HS256"
     # 是否打印 SQLAlchemy 生成的 SQL,开发时开启便于调试
     DB_ECHO: bool = True
-
+    # ai
+    BASE_URL: str = "https://api.agnes-ai.cn/v1"
+    API_KEY: str
+    BASE_MODEL: str = "agnes-2.5-flash"
     model_config = {
-        'env_file': ENV_FILE,
-        'env_file_encoding': 'utf-8',
+        "env_file": ENV_FILE,
+        "env_file_encoding": "utf-8",
         # .env 中多余的键不报错,便于逐步补充配置项
-        'extra': 'ignore',
+        "extra": "ignore",
     }
 
 
@@ -30,5 +33,5 @@ class Settings(BaseSettings):
 settings = Settings()  # type: ignore[call-arg]
 
 
-#文件上传路径
-UPLOAD_DIR = ROOT_DIR / 'uploads'
+# 文件上传路径
+UPLOAD_DIR = ROOT_DIR / "uploads"

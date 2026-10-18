@@ -1,12 +1,11 @@
 from typing import Annotated
 
+import rich
 from fastapi import APIRouter, Depends, Query
 from fastapi.security import HTTPBearer
-import rich
-from sqlalchemy import and_, or_, select, func
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
-from app.modules.User.database import User
 from app.common.base_response import pagination_response, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
@@ -20,6 +19,7 @@ from app.modules.lab.schemas import (
     UpdateLabImageRequest,
     UpdateLabRequest,
 )
+from app.modules.User.database import User
 
 bearer = HTTPBearer()
 lab_router = APIRouter(
