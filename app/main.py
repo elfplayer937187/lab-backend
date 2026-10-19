@@ -1,4 +1,7 @@
+import logging
+
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from app.config import UPLOAD_DIR
@@ -13,11 +16,21 @@ from app.config import UPLOAD_DIR
 from app.middlewares.jwt_midware import JWTMiddleWare
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.warning("Starting up...")
+    yield
+    logger.warning("Shutting down...")
+
+
 app = FastAPI(
     title="FastAPI-Admin",
     description="FastAPI Admin",
     version="0.1.0",
     swagger_ui_parameters={"persistAuthorization": True},
+    lifespan=lifespan,
 )
 app.include_router(apiRouter)
 

@@ -32,6 +32,11 @@
     "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe",
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
+    // Pylance 对第三方包的索引深度(影响补全/自动导入能穿到多深的子包)。
+    // 注意:该设置会整体替换默认值(sklearn/pandas 等默认条目不再生效),本项目只加 langgraph。
+    "python.analysis.packageIndexDepths": [
+        { "name": "langgraph", "depth": 5, "includeAllSymbols": true }
+    ],
 
     // ---------- Markdown:保留行尾双空格(Markdown 里表示换行) ----------
     "[markdown]": {

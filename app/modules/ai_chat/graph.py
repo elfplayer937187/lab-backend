@@ -1,0 +1,56 @@
+from os import path
+import os
+import sqlite3
+
+from langchain_core.messages import SystemMessage, AIMessage
+from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.graph import MessagesState, StateGraph, END, START
+from langgraph.store.memory import InMemoryStore
+from app.config import ROOT_DIR
+
+# 定义全局graph
+_graph = None
+_checkpointer = None
+
+_checkpointer_path = None
+if _checkpointer_path is None:
+    if not path.exists(ROOT_DIR / "checkpoint"):
+        os.mkdir(ROOT_DIR / "checkpoint")
+    _checkpointer_path = ROOT_DIR / "checkpoint" / "checkpoint.db"
+
+
+def get_checkpointer() -> SqliteSaver:
+    global _checkpointer
+    if _checkpointer is None:
+        # 创建checkpointer
+        connection = sqlite3.connect(
+            _checkpointer_path or ROOT_DIR / "checkpoint" / "checkpoint.db",
+            timeout=30,
+            check_same_thread=False,
+        )
+        _checkpointer = SqliteSaver(connection)
+        _checkpointer.setup()
+    return _checkpointer
+
+
+# 创建图
+def build_graph(llm: ChatOpenAI, system_prompt: str, checkpointer: SqliteSaver):
+    def call_model(state: MessagesState):
+        messages = [SystemMessage(content=system_prompt), *state["messages"]]
+        return {"messages": llm.invoke(messages)}
+
+    builder = StateGraph(MessagesState)
+    builder.add_node("model", call_model)
+    builder.add_edge(START, "model")
+    builder.add_edge("model", END)
+
+    return builder.compile(checkpointer=checkpointer)
+
+
+def get_graph(llm, system_prompt: str):
+    global _graph
+    if _graph is None:
+        _graph = build_graph(llm, system_prompt, get_checkpointer())
+    return _graph

@@ -1,12 +1,18 @@
 import logging
+from uuid import uuid4
 
-from langchain_core.messages import ChatMessage
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
+import rich
 
+from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.config import settings
+from app.modules.ai_chat.graph import get_graph
 from app.modules.ai_chat.schemas import ChatMessageList
+from app.modules.ai_chat.graph import get_checkpointer
 
 logger = logging.getLogger(__name__)
 
@@ -27,23 +33,44 @@ def get_llm_chat():
     return llm
 
 
-def chat(payload: ChatMessageList):
+def chat(payload: ChatMessageList, user_id: int):
     """大模型对话"""
-    if not payload.messages:
+    if not payload.content:
         raise BusinessError(message="内容不为空")
 
-    history = [ChatMessage(content=system_propmt, role="system")]
-    for message in payload.messages:
-        if message.content.strip():
-            history.append(ChatMessage(role=message.role, content=message.content))
-    client = get_llm_chat()
+    thread_id = payload.thread_id or uuid4().hex
+    # 类型标注由 Pylance 用来把 dict 推断成 RunnableConfig(否则 invoke 的 config 参数报类型错误)
+    config: RunnableConfig = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
     try:
-        response = client.invoke(
-            history, config={"configurable": {"thread_id": payload.thread_id}}
+        # 编译图.invoke(State,配置)
+        result = get_graph(get_llm_chat(), system_propmt).invoke(
+            {"messages": [HumanMessage(content=payload.content, role="user")]},
+            config,
         )
-        history.append(ChatMessage(role="assistant", content=response.content))
-        if not response.content:
-            raise BusinessError(message="没有内容")
-        return response.content
-    except Exception as e:
+    except Exception:
+        logger.exception("大模型调用失败")
         raise BusinessError(message="大模型调用失败")
+
+    content = result["messages"][-1].content
+    if not content:
+        raise BusinessError(message="大模型返回结果为空")
+    return {"thread_id": thread_id, "content": content}
+
+
+# 获取大模型调用历史
+def history(thread_id: str, user_id: int):
+    config: RunnableConfig = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
+    tup = get_checkpointer().get_tuple(config)
+    if tup is None:
+        return {"thread_id": thread_id, "content": ""}
+    messages = tup.checkpoint["channel_values"]["messages"] or []
+    rich.print(messages)
+    res = []
+    for message in messages:
+        if isinstance(message, AIMessage) or isinstance(message, HumanMessage):
+            res.append({"role": message.type, "content": message.content})
+
+    return {
+        "thread_id": thread_id,
+        "messages": res
+    }
