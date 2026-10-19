@@ -16,4 +16,15 @@ from app.modules.Permission.database import Permission
 from app.modules.Role.database import Role
 from app.modules.User.database import User
 from app.modules.lab_book.database import LabBook
-__all__ = ['User', 'Role', 'Permission', 'UserRole', 'RolePermission', 'Lab','LabBook']
+from app.modules.ai_chat.database import AiTitle
+
+__all__ = [
+    "User",
+    "Role",
+    "Permission",
+    "UserRole",
+    "RolePermission",
+    "Lab",
+    "LabBook",
+    "AiTitle",
+]
