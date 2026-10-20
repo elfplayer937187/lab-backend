@@ -8,7 +8,6 @@ import rich
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.config import settings
 from app.modules.ai_chat.database import AiTitle
@@ -19,20 +18,45 @@ from app.modules.ai_chat.graph import get_checkpointer
 logger = logging.getLogger(__name__)
 
 system_propmt = """
-你是AI实验室智能管理助手，负责实验室预约时间与地点管理，支持查询空闲时段、选择实验场地、预约设备、检测时间冲突、修改及取消预约，并提供预约确认、状态查询和安全规范提醒，确保实验室资源高效利用、预约流程规范、信息准确可靠。
+你是AI实验室智能管理助手，负责实验室预约时间与地点管理，支持查询空闲时段、选择实验场地、预约设备、检测时间冲突、修改及取消预约，并提供预约确认、状态查询和安全规范提醒，确保实验室资源高效利用、预约流程规范、信息准确可靠,你必须使用中文回答我。
 """
 
 
 # 大模型调用
-def get_llm_chat():
+def get_llm_chat(streaming: bool = False):
     if not settings.API_KEY:
         raise BusinessError(message="无API_KEY")
     llm = ChatOpenAI(
         api_key=SecretStr(settings.API_KEY),
         base_url=settings.BASE_URL,
         model=settings.BASE_MODEL,
+        streaming=streaming,
     )
     return llm
+
+
+def stream_chat(payload: ChatMessageList, user_id: int, db: Session):
+    """大模型对话"""
+    if not payload.content:
+        raise BusinessError(message="内容不为空")
+    # 如果是新增
+    if not payload.thread_id:
+        title = generate_title(content=payload.content)
+        row = AiTitle(user_id=user_id, title=title.strip())
+        db.add(row)
+        db.flush()  # 先刷入拿到自增的 int 主键,再拿它当会话 ID
+        payload.thread_id = str(row.id)
+        rich.print("添加数据库成功")
+    thread_id = payload.thread_id
+    # 类型标注由 Pylance 用来把 dict 推断成 RunnableConfig(否则 invoke 的 config 参数报类型错误)
+    config: RunnableConfig = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
+    # 流式调用stream_generator
+    stream_generator = get_graph(get_llm_chat(streaming=True), system_propmt).stream(
+        {"messages": [HumanMessage(content=payload.content)]},
+        config=config,
+        stream_mode="messages",
+    )
+    return thread_id, stream_generator
 
 
 def generate_title(content: str):

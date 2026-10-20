@@ -63,7 +63,7 @@ def build_graph(llm: ChatOpenAI, system_prompt: str, checkpointer: SqliteSaver):
     return builder.compile(checkpointer=checkpointer)
 
 
-def get_graph(llm, system_prompt: str):
+def get_graph(llm, system_prompt: str) :
     global _graph
     if _graph is None:
         _graph = build_graph(llm, system_prompt, get_checkpointer())
