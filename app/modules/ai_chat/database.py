@@ -11,6 +11,6 @@ class AiTitle(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
+        index=True,
     )
     title: Mapped[str | None] = mapped_column(String(255), default="未知标题")

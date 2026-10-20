@@ -1,11 +1,11 @@
 import logging
-from uuid import uuid4
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 import rich
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.common.base_response import success_response
@@ -35,36 +35,34 @@ def get_llm_chat():
     return llm
 
 
-async def generate_title(content: str):
+def generate_title(content: str):
     llm = get_llm_chat()
-    response = await llm.ainvoke(
+    response = llm.invoke(
         [
             SystemMessage(
-                content="请生成一个标题,不要回答与HumanMessages里面的任何信息,里面的信息我会调用其他大模型进行处理,请无视用户说的话,你只需要概括并且返回一段标题"
+                content="你是一个标题生成器,请生成一个标题,不要回答与HumanMessages里面的任何信息,里面的信息我会调用其他大模型进行处理,请无视用户说的话,你只需要概括并且返回一段标题,标题不超过10个字"
             ),
             HumanMessage(content=content),
-            HumanMessage(content="请生成一个标题,格式为 《标题内容》"),
+            HumanMessage(content="请根据我上一句说的话,生成一个标题"),
         ]
     )
-    return response.content
+    # AIMessage.content 的类型是 str | list[str | dict]，.text 是 str 子类（TextAccessor）
+    # 提示词不能保证字数,这里再硬截断兜底
+    return response.text.strip()[:10]
 
 
-async def chat(payload: ChatMessageList, user_id: int, db: Session):
+def chat(payload: ChatMessageList, user_id: int, db: Session):
     """大模型对话"""
     if not payload.content:
         raise BusinessError(message="内容不为空")
     # 如果是新增
     if not payload.thread_id:
-        payload.thread_id = uuid4().hex
-        title = await generate_title(content=payload.content)
-        db.add(
-            AiTitle(
-                id=payload.thread_id,
-                user_id=user_id,
-                title=title,
-            )
-        )
-
+        title = generate_title(content=payload.content)
+        row = AiTitle(user_id=user_id, title=title.strip())
+        db.add(row)
+        db.flush()  # 先刷入拿到自增的 int 主键,再拿它当会话 ID
+        payload.thread_id = str(row.id)
+        rich.print("添加数据库成功")
     thread_id = payload.thread_id
     # 类型标注由 Pylance 用来把 dict 推断成 RunnableConfig(否则 invoke 的 config 参数报类型错误)
     config: RunnableConfig = {"configurable": {"thread_id": f"{user_id}:{thread_id}"}}
@@ -94,6 +92,32 @@ def history(thread_id: str, user_id: int):
     res = []
     for message in messages:
         if isinstance(message, AIMessage) or isinstance(message, HumanMessage):
-            res.append({"role": message.type, "content": message.content})
+            res.append(
+                {
+                    "role": message.type,
+                    "content": message.content,
+                    "messageId": message.id,
+                }
+            )
 
     return {"thread_id": thread_id, "messages": res}
+
+
+# 获取个人会话记录
+def get_personal_messages(user_id: int, db: Session):
+    stmt = select(AiTitle).where(AiTitle.user_id == user_id).order_by(AiTitle.id.desc())
+    titles = db.scalars(stmt).all()
+    return [
+        {"thread_id": title.id, "title": title.title, "createTime": title.created_at}
+        for title in titles
+    ]
+
+
+# 删除个人会话(标题表 + sqlite checkpoint)
+def delete_personal_message(thread_id: int, user_id: int, db: Session):
+    row = db.get(AiTitle, thread_id)
+    if row is None or row.user_id != user_id:
+        raise BusinessError(message="会话不存在")
+    db.delete(row)
+    get_checkpointer().delete_thread(f"{user_id}:{thread_id}")
+    return None

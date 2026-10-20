@@ -7,6 +7,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import MessagesState, StateGraph, END, START
+from langgraph.pregel.types import RetryPolicy
 from langgraph.store.memory import InMemoryStore
 from app.config import ROOT_DIR
 
@@ -39,10 +40,23 @@ def get_checkpointer() -> SqliteSaver:
 def build_graph(llm: ChatOpenAI, system_prompt: str, checkpointer: SqliteSaver):
     def call_model(state: MessagesState):
         messages = [SystemMessage(content=system_prompt), *state["messages"]]
-        return {"messages": llm.invoke(messages)}
+        response = llm.invoke(messages)
+        _ai_message = response.text.strip()
+        # 必须返回消息列表:add_messages 会把裸字符串当成 HumanMessage,历史里角色就错了
+        return {"messages": AIMessage(content=_ai_message)}
 
     builder = StateGraph(MessagesState)
-    builder.add_node("model", call_model)
+    builder.add_node(
+        "model",
+        call_model,
+        retry_policy=RetryPolicy(
+            max_attempts=3,
+            initial_interval=1.0,
+            backoff_factor=2.0,
+            max_interval=10.0,
+            jitter=True,
+        ),
+    )
     builder.add_edge(START, "model")
     builder.add_edge("model", END)
 
