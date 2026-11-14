@@ -15,6 +15,7 @@ from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.database import get_db
+from app.modules.Permission.services import get_tree_menu
 
 api_bearer = HTTPBearer()
 menu_router = APIRouter(
@@ -66,24 +67,7 @@ def update_menu(payload: UpdateMenuRequest, db: Session = Depends(get_db)):
 #
 @menu_router.get("/tree", summary="获取菜单树", description="获取菜单树")
 def get_menu_tree(db: Session = Depends(get_db)):
-    stmt = select(Permission)
-    # 原始orm的menu平铺列表
-    menus = db.scalars(stmt).all()
-
-    # pydantic id:menu 的映射。先全部实例化,保证同一个节点只有一个对象,
-    # 否则父节点被实例化多次,挂上去的 children 和最终返回的不是同一个。
-    dict_nodes = {menu.id: MenuTreeResponse.model_validate(menu) for menu in menus}
-
-    # 构建菜单树
-    tree: list[MenuTreeResponse] = []
-    for menu in menus:
-        node = dict_nodes[menu.id]
-        parent = dict_nodes.get(menu.pid or -1)
-        if parent is None:
-            # 父节点不在结果里(顶级菜单,或父节点被禁用而没查出来) -> 当根节点
-            tree.append(node)
-        else:
-            parent.children.append(node)
+    tree = get_tree_menu(db)
 
     return success_response(data=tree)
 

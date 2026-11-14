@@ -6,11 +6,12 @@ from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import delete, func, or_, select
 
+from app.modules.Permission.database import Permission
 from app.modules.Role.database import Role
 from app.common.base_response import PaginationResponse, success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
-from app.common.junction.database import UserRole
+from app.common.junction.database import RolePermission, UserRole
 from app.database import get_db
 from app.modules.User.database import User
 from app.modules.User.schemas import (
@@ -18,6 +19,7 @@ from app.modules.User.schemas import (
     AssignRoleRequest,
     CreateUserRequest,
     ListUserRequest,
+    PermissionItemResponse,
     UpdateUserByIdRequest,
     UpdateUserRequest,
     UpdateUserStatusRequest,
@@ -80,7 +82,28 @@ def get_user_info(request: Request, db: Session = Depends(get_db)):
     user = db.execute(stmt).scalar_one_or_none()
     if not user:
         raise BusinessError(code=Code.USER_NOT_EXIST, message="用户不存在")
-    return success_response(data=UserInfoResponse.model_validate(user))
+    # 根据user获取permissions 和buttons:用户 → 角色 → 权限,中间要过两张关联表。
+    # distinct 是必须的:多个角色可能挂着同一条权限,不去重会重复返回。
+    stmt = (
+        select(Permission)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .join(UserRole, UserRole.role_id == RolePermission.role_id)
+        .where(UserRole.user_id == user_id)
+        .distinct()
+    )
+    all_permissions = db.execute(stmt).scalars().all()
+    data = UserInfoResponse.model_validate(user)
+    data.buttons = [
+        PermissionItemResponse.model_validate(p)
+        for p in all_permissions
+        if p.type == 2
+    ]
+    data.permissions = [
+        PermissionItemResponse.model_validate(p)
+        for p in all_permissions
+        if p.type == 1
+    ]
+    return success_response(data=data)
 
 
 @user_router.post("/create", summary="创建用户", description="创建用户")

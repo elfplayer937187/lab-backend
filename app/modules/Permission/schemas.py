@@ -27,6 +27,9 @@ class UpdateMenuRequest(CreateMenuResponse):
 class MenuTreeResponse(CreateMenuResponse):
     """菜单树节点。"""
 
+    # 查某个角色的权限时用:角色已拥有该权限为 1,否则为 0。
+    # 默认 0,这样 /menu/tree 这种不带角色的查询也能直接复用同一个模型。
+    check: Literal[0, 1] = Field(0, description="角色是否已拥有该权限: 1-是,0-否")
     children: list["MenuTreeResponse"] = Field(
         default_factory=list, description="子菜单"
     )

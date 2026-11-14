@@ -3,6 +3,23 @@ from typing import List, Literal, Optional, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+class PermissionItemResponse(BaseModel):
+    """用户信息里的菜单 / 按钮项。
+
+    不能直接用 Permission 这个 ORM 模型做字段类型:Pydantic 生成不了它的 schema,
+    模型类定义时就会抛 PydanticSchemaGenerationError,整个应用起不来。
+    """
+
+    id: int
+    code: str
+    name: str
+    pid: Optional[int] = None
+    description: Optional[str] = None
+    type: int
+    status: int
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserInfoResponse(BaseModel):
     """获取用户信息的响应体。
 
@@ -22,7 +39,8 @@ class UserInfoResponse(BaseModel):
     phone: Optional[str] = Field(None, pattern=r"^1[3-9]\d{9}$|^$")
     avatar: Optional[str] = None
     status: int
-
+    buttons: List[PermissionItemResponse] = Field(default_factory=list)
+    permissions: List[PermissionItemResponse] = Field(default_factory=list)
     # 可以直接从 ORM 模型创建 Pydantic 模型
     model_config = ConfigDict(from_attributes=True)
 

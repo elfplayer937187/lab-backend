@@ -6,6 +6,7 @@ from app.auth.schemas import LoginRequest, RegisterRequest
 from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
+from app.common.junction.database import UserRole
 from app.database import get_db
 from app.modules.User.database import User
 from app.utils.bcrypt import hash_password, verify_password
@@ -60,4 +61,6 @@ async def register(RegisterInfo: RegisterRequest, db: Session = Depends(get_db))
         status=1,
     )
     db.add(user)
+    #给予默认角色（先给个超级管理员)
+    db.add(UserRole(user_id=user.id, role_id=1))
     return success_response(message='注册成功')

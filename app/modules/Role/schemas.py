@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,3 +32,9 @@ class UpdateRoleRequest(CreateRoleRequest):
 
     id: int = Field(..., ge=1)
     model_config = ConfigDict(extra='forbid')
+
+class AssignPermissionRequest(BaseModel):
+    """分配权限请求体。"""
+
+    permissionId: List[int] = Field(..., description='权限ID列表')
+    roleId: int = Field(..., ge=1, description='角色ID')
