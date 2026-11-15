@@ -61,6 +61,8 @@ async def register(RegisterInfo: RegisterRequest, db: Session = Depends(get_db))
         status=1,
     )
     db.add(user)
+    #先获取自增id才能赋值给UserRole
+    db.flush()
     #给予默认角色（先给个超级管理员)
     db.add(UserRole(user_id=user.id, role_id=1))
     return success_response(message='注册成功')

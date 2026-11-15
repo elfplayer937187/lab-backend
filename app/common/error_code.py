@@ -10,6 +10,7 @@ class Code:
     TOKEN_INVALID = 201  # Token 无效
     TOKEN_ACCESS_FORBIDDEN = 202  # Token 访问被拒绝
     ACCESS_UNAUTHORIZED = 203  # 访问未授权
+    TOKEN_EXPIRED = 204  # Token 已过期
 
     # 用户/账户
     ACCOUNT_SAME = 230  # 账户已存在
@@ -30,6 +31,16 @@ class Code:
     ROLE_EXIST = 253
     LAB_BOOK_NOT_EXIST = 254  # 角色已存在
 
+    # 实验室设备类型
+    DEVICE_TYPE_NOT_EXIST = 255  # 设备类型不存在
+    DEVICE_TYPE_EXIST = 256  # 设备类型已存在
+    DEVICE_TYPE_IN_USE = 257  # 设备类型下还有设备
+
+    # 实验室设备(设备资料)
+    DEVICE_NOT_EXIST = 258  # 设备不存在
+    DEVICE_EXIST = 259  # 设备编号已存在
+    DEVICE_IN_USE = 260  # 设备已被实验室使用
+
 # 业务码 → HTTP 状态码的兜底映射。
 #
 # 只在抛 BusinessError 时没显式传 http_status 才用得上。同一个业务码在不同接口
@@ -47,6 +58,7 @@ HTTP_STATUS: dict[int, int] = {
     Code.TOKEN_INVALID: 401,
     Code.TOKEN_ACCESS_FORBIDDEN: 403,
     Code.ACCESS_UNAUTHORIZED: 401,
+    Code.TOKEN_EXPIRED: 401,
     # 用户/账户
     Code.ACCOUNT_SAME: 409,
     Code.USER_NOT_EXIST: 404,
@@ -59,4 +71,12 @@ HTTP_STATUS: dict[int, int] = {
     # 角色
     Code.ROLE_NOT_EXIST: 404,
     Code.ROLE_EXIST: 409,
+    # 实验室设备类型
+    Code.DEVICE_TYPE_NOT_EXIST: 404,
+    Code.DEVICE_TYPE_EXIST: 409,
+    Code.DEVICE_TYPE_IN_USE: 409,
+    # 实验室设备(设备资料)
+    Code.DEVICE_NOT_EXIST: 404,
+    Code.DEVICE_EXIST: 409,
+    Code.DEVICE_IN_USE: 409,
 }

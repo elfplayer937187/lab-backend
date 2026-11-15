@@ -60,7 +60,16 @@ def decode_access_token(token: str) -> TokenPayload:
 
 # 验证token
 def verify_access_token(token: str) -> TokenPayload:
-    payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ISSUE_ALGORITHM])
+    # PyJWT 的过期/非法 token 抛的是 jwt 自己的异常,不转成 BusinessError 的话
+    # 会一路冒到全局异常处理器,前端只能看到 500 系统错误。
+    try:
+        payload = jwt.decode(
+            token, settings.JWT_SECRET_KEY, algorithms=[ISSUE_ALGORITHM]
+        )
+    except jwt.ExpiredSignatureError:
+        raise BusinessError(
+            code=Code.TOKEN_EXPIRED, message='登录已过期,请重新登录', http_status=401
+        )
     if payload.get('iss') != ISSUER:
         raise BusinessError(code=Code.TOKEN_INVALID, message='无效的token')
     return cast(TokenPayload, payload)
