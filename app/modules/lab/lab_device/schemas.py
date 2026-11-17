@@ -14,6 +14,7 @@ class CreateLabDeviceRequest(BaseModel):
     status: int = Field(1, description="状态: 0-禁用,1-启用")
 
     @field_validator("status")
+    @classmethod
     def _validate_status(cls, value: int) -> int:  # noqa: N805
         if value not in (0, 1):
             raise ValueError("状态值只能为 0 或 1")

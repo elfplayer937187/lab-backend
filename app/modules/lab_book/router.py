@@ -75,17 +75,16 @@ def create_lab_book(
     description="获取所有预约记录表等待审批",
 )
 def get_lab_book_list_wait_accept(
-    request: Request, page: int, limit: int, db: Session = Depends(get_db)
+    page: int, limit: int, db: Session = Depends(get_db)
 ):
 
-    user_id = request.state.user_id
     # total / 待审核 / 已通过 一次聚合查出来,省掉另外两次 COUNT,三个数也来自同一快照
     total, wait_accept, accept = db.execute(
         select(
             func.count(LabBook.id).label("total"),
             func.count(case((LabBook.status == 0, 1))).label("wait_accept"),
             func.count(case((LabBook.status == 1, 1))).label("accept"),
-        ).where(LabBook.reviewer_id == user_id)
+        )
     ).one()
     stmt = (
         select(
@@ -96,7 +95,6 @@ def get_lab_book_list_wait_accept(
         )
         .join(User, LabBook.user_id == User.id)
         .join(Lab, LabBook.lab_id == Lab.id)
-        .where(LabBook.reviewer_id == user_id)
         .limit(limit)
         .offset((page - 1) * limit)
         .order_by(LabBook.status.desc(), LabBook.id.desc())
@@ -143,7 +141,7 @@ def accept_lab_book(
 ):
     user_id = request.state.user_id
     lab_book = db.get(LabBook, accept_payload.LabBookId)
-    if lab_book is None or lab_book.reviewer_id != user_id:
+    if lab_book is None:
         raise BusinessError(
             code=Code.LAB_BOOK_NOT_EXIST,
             message="预约不存在",

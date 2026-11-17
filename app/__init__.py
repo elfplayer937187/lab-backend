@@ -10,9 +10,11 @@ from app.modules.Permission.router import menu_router
 from app.modules.Role.router import role_router
 from app.modules.User.router import user_router
 from app.upload.upload_config import file_router
+from app.modules.dashhome.router import dashboard_router
 
 apiRouter = APIRouter(prefix="/api")
 
+apiRouter.include_router(dashboard_router)
 apiRouter.include_router(auth_router)
 apiRouter.include_router(file_router)
 apiRouter.include_router(user_router)
