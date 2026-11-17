@@ -1,7 +1,8 @@
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 from app.database import Base
+from app.modules.lab.lab_device_type.database import LabDeviceType
 
 
 class LabDevice(Base):
@@ -27,3 +28,9 @@ class LabDevice(Base):
         String(100), comment="设备描述", nullable=True
     )
     status: Mapped[int] = mapped_column(comment="设备状态", default=1)
+
+    device_type: Mapped[LabDeviceType] = relationship()
+
+    @property
+    def effective_type(self):
+        return 1 if self.status == 1 and self.device_type.status == 1 else 0

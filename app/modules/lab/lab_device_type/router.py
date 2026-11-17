@@ -139,6 +139,7 @@ def update_device_type_status(
             code=Code.DEVICE_TYPE_NOT_EXIST, message="设备类型不存在"
         )
     device_type.status = payload.status
+    # 把所有的设备都禁用
     return success_response()
 
 

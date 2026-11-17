@@ -1,20 +1,23 @@
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CreateLabDeviceRequest(BaseModel):
     """创建设备资料请求体。"""
 
     device_name: str = Field(..., min_length=1, max_length=30, description="设备名称")
-    device_code: str = Field(
-        ..., min_length=1, max_length=30, description="设备编号"
-    )
+    device_code: str = Field(..., min_length=1, max_length=30, description="设备编号")
     brand: str = Field(..., min_length=1, max_length=30, description="设备品牌")
     type_id: int = Field(..., ge=1, description="设备类型ID")
     description: Optional[str] = Field(None, max_length=100, description="设备描述")
-    status: Literal[0, 1] = Field(1, description="状态: 0-禁用,1-启用")
+    status: int = Field(1, description="状态: 0-禁用,1-启用")
 
+    @field_validator("status")
+    def _validate_status(cls, value: int) -> int:  # noqa: N805
+        if value not in (0, 1):
+            raise ValueError("状态值只能为 0 或 1")
+        return value
 
 class UpdateLabDeviceRequest(CreateLabDeviceRequest):
     """更新设备资料请求体。"""
@@ -45,4 +48,5 @@ class GetLabDeviceResponse(CreateLabDeviceRequest):
     """设备资料响应体。"""
 
     lab_device_id: int
+    effective_type: int | None
     model_config = ConfigDict(from_attributes=True)
