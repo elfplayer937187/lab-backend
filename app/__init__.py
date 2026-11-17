@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.auth.router import router as auth_router
 from app.modules.ai_chat.router import ai_router
 from app.modules.lab.lab_device.router import lab_device_router
+from app.modules.lab.lab_device_stock.router import stock_router
 from app.modules.lab.lab_device_type.router import device_type_router
 from app.modules.lab.router import lab_router
 from app.modules.lab_book.router import lab_book_router
@@ -26,6 +27,8 @@ apiRouter.include_router(lab_router)
 apiRouter.include_router(device_type_router)
 # 实验室设备资料
 apiRouter.include_router(lab_device_router)
+# 实验室设备管理(库存)
+apiRouter.include_router(stock_router)
 apiRouter.include_router(lab_book_router)
 # ai
 apiRouter.include_router(ai_router)
