@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     # JWT 配置
     JWT_SECRET_KEY: str
     JWT_EXPIRATION_HOURS: int = 24
+
+
     JWT_ALGORITHM: str = "HS256"
     # 是否打印 SQLAlchemy 生成的 SQL,开发时开启便于调试
     DB_ECHO: bool = True
@@ -25,6 +27,13 @@ class Settings(BaseSettings):
     LANGSMITH_API_KEY: str = ""
     LANGSMITH_TRACING: str = "false"
     LANGSMITH_PROJECT: str = "ai-chat"
+
+    OSS_REGION: str
+    #阿里云oss
+    OSS_ACCESS_KEY_ID: str
+    OSS_ACCESS_KEY_SECRET: str
+    OSS_BUCKET:str
+
     model_config = {
         "env_file": ENV_FILE,
         "env_file_encoding": "utf-8",

@@ -1,26 +1,26 @@
-import uuid
-from fastapi import APIRouter, Depends, File, UploadFile
 import os
+from pathlib import Path
 
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.security import HTTPBearer
+
 from app.common.base_response import success_response
 from app.common.business_error import BusinessError
-from pathlib import Path
-from datetime import datetime
-from app.config import UPLOAD_DIR
+from app.common.oss.oss_client import get_temporary_url
+from app.common.oss.oss_client import upload_file as oss_upload_file
 
-api_bearer=HTTPBearer()
+api_bearer = HTTPBearer()
 
-file_router = APIRouter(tags=["文件管理"],dependencies=[Depends(api_bearer)])
+file_router = APIRouter(tags=["文件管理"], dependencies=[Depends(api_bearer)])
 
 max_file_size = 1024 * 1024 * 10  # 10MB
 
 allowed_files = [".jpg", ".png", ".jpeg", ".gif", ".pdf", ".txt", ".word"]
 
 
-@file_router.post("/upload",summary="上传文件",description="上传文件")
+@file_router.post("/upload", summary="上传文件", description="上传文件")
 def upload_file(file: UploadFile = File(...)):
-    """上传文件"""
+    """上传文件到阿里云 OSS。"""
     if not file.filename:
         raise BusinessError(code=400, message="文件名不能为空")
 
@@ -35,23 +35,17 @@ def upload_file(file: UploadFile = File(...)):
             code=400, message=f"文件大小超出{file.size // 1024 // 1024}MB"
         )
 
-    disk_name = (
-        f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{uuid.uuid4().hex[:8]}{ext}"
+    result = oss_upload_file(
+        prefix="upload", file_name=origin_name, file_content=file
     )
-
-    disk_path = UPLOAD_DIR
-
-    if not disk_path.exists():
-        os.mkdir(disk_path)
-
-    with open(disk_path / disk_name, "wb") as f:
-        f.write(file.file.read())
-
+    key = result["key"]
     return success_response(
         data={
             "origin_name": origin_name,
-            "disk_name": disk_name,
+            # 业务表里存 key;bucket 是私有的,签名 URL 会过期,不能入库
+            "key": key,
             "size": file.size,
-            "url": f"/uploads/{disk_name}",
+            # 临时访问地址,仅用于前端立即展示
+            "url": get_temporary_url(key),
         }
     )

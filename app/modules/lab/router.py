@@ -141,5 +141,5 @@ def update_lab_image(payload: UpdateLabImageRequest, db: Session = Depends(get_d
             message="实验室不存在",
             http_status=Code.LAB_NOT_EXIST,
         )
-    lab.image = payload.imageUrl
+    lab.image = payload.imageKey
     return success_response()

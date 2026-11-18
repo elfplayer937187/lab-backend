@@ -11,9 +11,11 @@ from app.modules.Role.router import role_router
 from app.modules.User.router import user_router
 from app.upload.upload_config import file_router
 from app.modules.dashhome.router import dashboard_router
-
+from app.common.test import test_router
 apiRouter = APIRouter(prefix="/api")
 
+
+apiRouter.include_router(test_router)
 apiRouter.include_router(dashboard_router)
 apiRouter.include_router(auth_router)
 apiRouter.include_router(file_router)

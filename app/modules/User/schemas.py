@@ -1,6 +1,8 @@
 from typing import List, Literal, Optional, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.common.oss.oss_client import to_access_url
 
 
 class PermissionItemResponse(BaseModel):
@@ -43,6 +45,12 @@ class UserInfoResponse(BaseModel):
     permissions: List[PermissionItemResponse] = Field(default_factory=list)
     # 可以直接从 ORM 模型创建 Pydantic 模型
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("avatar", mode="after")
+    @classmethod
+    def _avatar_access_url(cls, v: Optional[str]) -> Optional[str]:
+        # 库里存的是 OSS key,返回前现签临时 URL;旧数据原样返回
+        return to_access_url(v)
 
 
 class UserListItemResponse(UserInfoResponse):

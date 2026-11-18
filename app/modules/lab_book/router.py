@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
+from app.common.oss.oss_client import to_access_url
 from app.database import get_db
 from app.modules.lab.database import Lab
 from app.modules.lab_book.database import LabBook
@@ -100,12 +101,15 @@ def get_lab_book_list_wait_accept(
         .order_by(LabBook.status.desc(), LabBook.id.desc())
     )
     data = db.execute(stmt).mappings().all()
+    records = [
+        LabBookListWaitAcceptResponse.model_validate(lab_book) for lab_book in data
+    ]
+    for record in records:
+        # 库里存的是 OSS key,返回前现签临时 URL;旧数据原样返回
+        record.image = to_access_url(record.image)
     return success_response(
         data={
-            "records": [
-                LabBookListWaitAcceptResponse.model_validate(lab_book)
-                for lab_book in data
-            ],
+            "records": records,
             "total": total or 0,
             "page": page,
             "page_size": limit,

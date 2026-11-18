@@ -7,6 +7,7 @@ from app.common.base_response import success_response
 from app.common.business_error import BusinessError
 from app.common.error_code import Code
 from app.common.junction.database import UserRole
+from app.common.oss.oss_client import to_access_url
 from app.database import get_db
 from app.modules.User.database import User
 from app.utils.bcrypt import hash_password, verify_password
@@ -37,7 +38,7 @@ async def login(LoginInfo: LoginRequest, db: Session = Depends(get_db)):
             'name': user.name,
             'email': user.email,
             'phone': user.phone,
-            'avatar': user.avatar,
+            'avatar': to_access_url(user.avatar),
             'status': user.status,
             'token': token,
         }

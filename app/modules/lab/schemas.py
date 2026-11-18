@@ -1,7 +1,9 @@
 from datetime import time
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.common.oss.oss_client import to_access_url
 
 
 class CreateLabRequest(BaseModel):
@@ -39,6 +41,12 @@ class GetLabListResponse(CreateLabRequest):
     # 不开这个,Pydantic 只认 dict,传 Lab 实例会报 model_type 校验错。
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("image", mode="after")
+    @classmethod
+    def _image_access_url(cls, v: Optional[str]) -> Optional[str]:
+        # 库里存的是 OSS key,返回前现签临时 URL;旧数据原样返回
+        return to_access_url(v)
+
 
 class UpdateLabRequest(CreateLabRequest):
     """更新实验室请求体。"""
@@ -60,4 +68,5 @@ class UpdateLabImageRequest(BaseModel):
     """更新实验室图片请求体。"""
 
     id: int = Field(..., ge=1)
-    imageUrl: str
+    # 传 OSS 对象 key(上传接口返回的 key),不要传会过期的临时 URL
+    imageKey: str
