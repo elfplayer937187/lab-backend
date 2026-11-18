@@ -41,6 +41,10 @@ class Code:
     DEVICE_EXIST = 259  # 设备编号已存在
     DEVICE_IN_USE = 260  # 设备已被实验室使用
 
+    # 实验室设备关联(库存)
+    STOCK_NOT_EXIST = 262  # 实验室设备记录不存在
+    STOCK_EXIST = 263  # 该实验室已添加过此设备
+
 # 业务码 → HTTP 状态码的兜底映射。
 #
 # 只在抛 BusinessError 时没显式传 http_status 才用得上。同一个业务码在不同接口
@@ -79,4 +83,7 @@ HTTP_STATUS: dict[int, int] = {
     Code.DEVICE_NOT_EXIST: 404,
     Code.DEVICE_EXIST: 409,
     Code.DEVICE_IN_USE: 409,
+    # 实验室设备关联(库存)
+    Code.STOCK_NOT_EXIST: 404,
+    Code.STOCK_EXIST: 409,
 }
